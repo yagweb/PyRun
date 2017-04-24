@@ -10,7 +10,33 @@ import shutil
 import py_compile
 import glob
 
-def compile_files(files, cdir=None, ignore=[], 
+python_source_lib = os.path.abspath(os.path.dirname(os.__file__))
+ 
+class module_path_mgr(object):
+    def __init__(self):
+        self.zip_files = []
+        self.copy_files = []
+    def add_path(self, path):
+        self.zip_files.append(path)
+    def add_module(self, name):
+        module = __import__(name)
+        file = module.__file__
+        if(file.endswith('__init__.py')):
+            self.zip_files.append(os.path.dirname(file))
+        elif(file.endswith('so') or file.endswith('dll') or file.endswith('pyd')):
+            self.copy_files.append(file)
+        else:
+            self.zip_files.append(file)   
+    def zip(self, dirname, zip_file):
+        if len(self.zip_files) != 0:
+            compile_files(self.zip_files, 
+                          ignore = ['__pycache__'],
+                          zip_file = os.path.join(dirname, zip_file))        
+    def copy(self, dirname):   
+        for file in self.copy_files:
+            shutil.copy(file, os.path.join(dirname, os.path.basename(file)))
+            
+def compile_files(files, cdir=None, ignore=['__pycache__'], 
                   maxlevels=10, ddir=None, optimize=-1, 
                   zip_file = None, is_source = False):   
     if zip_file is not None:
@@ -65,7 +91,7 @@ def compile_files(files, cdir=None, ignore=[],
         return
         
     if zip_file is not None:
-        print('bundle start')
+        print('bundle start %s' % zip_file)
         compile_zip(zip_file, cdir, cdir_files)      
         print('bundle end') 
     if cdir_remove:   
@@ -97,7 +123,7 @@ def compile_zip(path, dir, excludes = []):
                 zpfd.write(fullname, arcname)
     zpfd.close()    
         
-def compile_dir(dir, cdir, ignore=[], 
+def compile_dir(dir, cdir, ignore=['__pycache__'], 
                 maxlevels=10, ddir=None, 
                 optimize=-1, is_source = False):
     if cdir is None:
@@ -159,8 +185,6 @@ def compile_file(fullname, cdir, ddir=None, optimize=-1, is_source = False):
         return False
 
 def delete_from_zip(zip_path, delete_dirs, delete_files=[]):
-    import zipfile
-    import shutil
     print('delete from zip file')
     zin = zipfile.ZipFile (zip_path, 'r')
     new_zipfile = zip_path + '.temp.zip' #create a new file
@@ -219,16 +243,23 @@ def get_libcore_files():
              ]
     #itertools, sys，builtins etc are in the python dll
     return files
+     
+def bundle_libcore(dirname, zip_file = r'libcore.zip'):
+    files = get_libcore_files()
+    files = [os.path.join(python_source_lib, bb) for bb in files]
+    compile_files(files, 
+                  ignore = ['__pycache__'],
+                  zip_file = os.path.join(dirname, zip_file))
 
-def test_bundle():
-#    compile_zip('temp.zip', r'C:\Users\yagweb\work\git\pydata\test')
-    compile_file(r'C:\Users\yagweb\work\git\StarKE\Lib\types.py', 
-                            cdir=r'C:\Users\yagweb\work\git\StarKE\Scripts\temp')
-#    compile_dir(r'C:/Users/yagweb/work/git/netcheck/netcheckui', 
-#                            cdir=r'C:\Users\yagweb\work\git\StarKE\Scripts\temp1')
-#    compile_files([r'C:/Users/yagweb/work/git/netcheck/netcheck',
-#                   r'C:/Users/yagweb/work/git/netcheck/autoping.py'], 
-#                            zip_file=r'temp.zip')
+def bundle_ctypes(dirname, zip_file = r'ctypes.zip'):
+    path_mgr = module_path_mgr()
+    path_mgr.add_module('ctypes')
+    path_mgr.add_module('_ctypes')
+    path_mgr.zip(dirname, zip_file)
+    path_mgr.copy(dirname)
     
-if __name__ == '__main__':
-    test_bundle()
+def bundle_numpy(dirname, zip_file = r'numpy.zip'):
+    path_mgr = module_path_mgr()
+    path_mgr.add_module('numpy')
+    path_mgr.zip(dirname, zip_file)
+    path_mgr.copy(dirname)
