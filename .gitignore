@@ -1,7 +1,5 @@
 Debug/
-x64/
-*.VC.db
-*.opendb
+tmp/
 
 # General binaries and Build results
 *.dll
@@ -43,6 +41,8 @@ coverage.xml
 
 # Visual Studio cache/options directory
 .vs/
+*.VC.db
+*.opendb
 
 # NUNIT
 *.VisualState.xml
