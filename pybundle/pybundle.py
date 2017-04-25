@@ -4,6 +4,7 @@
 Issues contact with: hbtmdxywg@126.com
 """
 import os
+import sys
 import time
 import zipfile
 import shutil
@@ -25,11 +26,20 @@ class bundler(object):
         self.modules.append('itertools')
         self.modules.append('sys')
         self.modules.append('builtins') 
+        if not os.path.exists(self.dirname):
+            os.mkdir(self.dirname)
     def add_path(self, path):
         '''
         This method is not suggested, use add_module instead.
         '''
-        self.zip_files.append(path)
+        if(os.path.isdir(path)):
+            self.zip_files.append(path)
+        else:
+            tail = os.path.splitext(path)[1]
+            if tail == '.py':
+                self.zip_files.append(path)
+            else:
+                self.copy_files.append(path)            
     def skip_module(self, name):
         if name in self.modules:
             return
@@ -59,8 +69,6 @@ class bundler(object):
         self.copy()
     def bundle_init(self): 
         #folder init
-        if not os.path.exists(self.dirname):
-            os.mkdir(self.dirname)
         if self.is_compress: #create a temp folder
             self.root = os.path.abspath('temp%d' % time.time())
         else:
@@ -101,6 +109,7 @@ class bundler(object):
                 success = self.compile_file(_file, cdir, ddir, 
                                        optimize, is_source = is_source)
             return success
+        success = True
         for file in files:
             print("compile file '%s'" % file)
             if "*" in file or "?" in file or "[" in file:
@@ -232,7 +241,7 @@ def delete_from_zip(zip_path, delete_dirs, delete_files=[]):
     #override, if the file existed
     shutil.move(new_zipfile, zip_path)   
      
-def bundle_libcore(dirname, zip_file = r'libcore.zip'):
+def get_libcore(dirname, zip_file = r'libcore.zip'):
     '''
     Test for Python3.5
     '''
@@ -268,15 +277,34 @@ def bundle_libcore(dirname, zip_file = r'libcore.zip'):
     lib.add_module('ntpath')
     lib.add_module('genericpath')
     lib.add_module('sysconfig')
-    lib.bundle()
+    return lib
 
-def bundle_ctypes(dirname, zip_file = r'ctypes.zip'):
-    lib = bundler(dirname, zip_file)
-    lib.add_module('ctypes')
-    lib.add_module('_ctypes')
-    lib.bundle()
-    
-def bundle_numpy(dirname, zip_file = r'numpy.zip'):
-    lib = bundler(dirname, zip_file)
-    lib.add_module('numpy')
-    lib.bundle()
+def get_libext(dirname, zip_file = r'libext.zip'):
+    libcore = get_libcore(dirname)
+    libext = bundler(dirname, zip_file)
+    libext.skip_modules(libcore.modules)
+    return libext
+
+def add_ctypes(self, libext):
+    self.add_module('ctypes')
+    self.add_module('_ctypes')
+    libext.add_module('struct')
+ 
+def add_numpy(self, libext):
+    '''
+    not working, because the 'multiarray' module
+    '''
+    self.add_module('numpy')
+    #Windows Anaconda
+    mkldir = os.path.join(sys.prefix, 'Library/bin')
+    #WinPython
+    #import numpy
+    #mkldir = os.path.join(sys.prefix, os.path.join(numpy.__file__, "../core"))
+    for mkl in ('libiomp5md', 'mkl_avx2', 'mkl_core', 'mkl_intel_thread', 'mkl_rt'):
+        libext.add_path(mkldir + os.path.sep + mkl+'.dll')
+    libext.add_module('__future__')
+    libext.add_module('warnings')
+
+def add_socket(self, libext):
+    self.add_module('socket')
+    self.add_module('_socket')

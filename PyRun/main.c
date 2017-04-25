@@ -13,14 +13,21 @@ wmain(int argc, wchar_t **argv)
 	Py_NoSiteFlag = 1; //why need site module?
 	Py_SetProgramName(L"PyRun");
 	/*Get the absolute path of the libcore.zip*/
-	wchar_t *path = Py_GetProgramFullPath();
-	wchar_t libpath[500];
+	//wchar_t *path = Py_GetProgramFullPath();
+	wchar_t *path = argv[0];
+	wchar_t libpath[1024];
 	wcscpy(libpath, path);
 	wchar_t *pos = libpath + wcslen(path);
 	wcscpy(pos, L"/../libcore.zip;");
+	//add packages
+	pos = libpath + wcslen(libpath);
+	wcscpy(pos, path);
+	pos = libpath + wcslen(libpath);
+	wcscpy(pos, L"/../packages;");
 	//printf("%ls", libpath);
 	Py_SetPath(libpath); // absolute path of libcore.zip is need when debug
-	Py_Initialize(); 
+	Py_Initialize();
+	PySys_SetArgv(argc, argv); //Set sys.argv
 	PyRun_SimpleString("import os\n"
 		"import sys\n"
 		"if not os.path.exists('packages') or os.path.isfile('packages'):\n"
@@ -30,18 +37,14 @@ wmain(int argc, wchar_t **argv)
 		"    path = os.path.join('packages', name)\n"
 		"    if(os.path.isfile(path) and name.endswith('.zip')):\n"
 		"        sys.path.append(path)\n");
-	char script[500];
-	sprintf_s(script, 500,
-		"try:\n"
-		"    import %ls\n"
+	PyRun_SimpleString("try:\n"
+		"    __import__(os.path.splitext(os.path.basename(sys.argv[0]))[0])\n"
 		"except Exception as ex:\n"
 		"    print('>>>>>>>>')\n"
 		"    print(ex)\n"
 		"    print('<<<<<<<<')\n"
 		"    print('Press any key to exit...')\n"
-		"    sys.stdin.read(1)\n", argv[0]);
-	printf("%s", script);
-	PyRun_SimpleString(script);
+		"    sys.stdin.read(1)\n");
 	Py_Finalize();
 	return 0;
 }
