@@ -54,6 +54,7 @@ def freeze_test():
     fr.add_numpy()
     fr.add_matplotlib()
     fr.add_traitsui()
+    fr.add_package('packaging')
     fr.add_package('socket')
     fr.add_package('scipy')
     fr.add_package('sqlalchemy')
