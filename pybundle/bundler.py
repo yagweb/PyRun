@@ -61,13 +61,13 @@ class bundler(object):
         else:
             self.zip_files.append((file, None))
             
-    def bundle(self, dirname, zip_file = None):
+    def bundle(self, dirname, zip_file = None, is_source = False):
         self.dirname = dirname
         self.zip_file = zip_file
         self.is_compress = False if self.zip_file is None else True 
         self.bundle_init()
         self.compile_objs(self.zip_files, cdir = self.root,
-                      ignore = ['__pycache__'])
+                      ignore = ['__pycache__'], is_source = is_source)
         self.compress()
         self.copy()
         
