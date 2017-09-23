@@ -158,10 +158,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\PyRun\stdafx.h" />
-    <ClInclude Include="..\PyRun\targetver.h" />
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="..\PyRun\main.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

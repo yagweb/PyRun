@@ -1,8 +1,7 @@
 // ExEngineCore.cpp : 定义控制台应用程序的入口点。
 //
 #include "Python.h"
-#include <locale.h>
-#include "stdafx.h"
+#include <stdio.h>
 
 int
 wmain(int argc, wchar_t **argv)
