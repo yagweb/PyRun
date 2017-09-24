@@ -52,8 +52,16 @@ class bundler(object):
         if name in self.modules:
             return
         self.modules.append(name)
-        module = __import__(name)
-        file = module.__file__
+        names = name.split(".")
+        if len(names) == 1:
+            module = __import__(name)
+        else:
+            module_name= names[-1]
+            package_name = '.'.join(names[:-1])
+            temp = {}
+            exec("from {0} import {1}".format(package_name, module_name), temp)
+            module = temp[module_name]
+        file = os.path.dirname(module.__file__)
         if(file.endswith('__init__.py')):
             self.zip_files.append((os.path.dirname(file), None))
         elif(file.endswith('so') or file.endswith('dll') or file.endswith('pyd')):
