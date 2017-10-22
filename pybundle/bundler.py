@@ -12,6 +12,37 @@ import py_compile
 import glob
 
 python_source_lib = os.path.abspath(os.path.dirname(os.__file__))
+  
+
+class FileUtil(object):
+    def  __init__(self):
+        import platform
+        temp = platform.python_version().split('.')
+        pyver = "%s%s" % (temp[0], temp[1])
+        if platform.system() == "Windows":
+            self.mod_ext = ".cp%s-win_amd64.pyd" % pyver
+            self.dll_prefix = ""
+            self.dll_ext = ".dll"
+        else:
+            self.mod_ext = ".cpython-%sm-x86_64-linux-gnu.so" % pyver
+            self.dll_prefix = "lib"
+            self.dll_ext = ".so"
+            
+    def get_mod_file(self, mod_name):
+        return mod_name + self.mod_ext
+    
+    def get_mod_files(self, mod_names):
+        return [mod_name + self.mod_ext for mod_name in mod_names]
+            
+    def get_dll_file(self, dll):
+        temp = dll.replace("\\", "/").split("/")
+        temp[-1] = self.dll_prefix + temp[-1] + self.dll_ext
+        return "/".join(temp)
+    
+    def get_dll_files(self, dlls):
+        return [self.get_file(dll) for dll in dlls]
+    
+file_util = FileUtil()
  
 class bundler(object):
     def __init__(self):
