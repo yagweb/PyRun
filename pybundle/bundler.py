@@ -44,7 +44,41 @@ class FileUtil(object):
     
 file_util = FileUtil()
  
-class bundler(object):
+def check_file_timeout(dest_file, dependencies, ignore = ['__pycache__']):
+    if dest_file is None:
+        return True 
+    if not os.path.exists(dest_file):
+        return True
+    file_mtime = os.stat(dest_file).st_mtime
+    
+    def check_file(file):
+        if os.stat(file).st_mtime > file_mtime:
+            return True
+        return False
+    
+    def check_dir(dir):  
+        for name in os.listdir(dir):
+            if name in ignore:
+                continue
+            file = os.path.join(dir, name)
+            if check(file):
+                return True
+        return False
+    
+    def check(file):
+        if os.stat(file).st_mtime > file_mtime:
+            return True
+        if os.path.isdir(file):
+            return check_dir(file)
+        else:
+            return check_file(file) 
+        
+    for file in dependencies:
+        if check(file):
+            return True
+    return False
+    
+class Bundler(object):
     def __init__(self):
 #        self.dirname = dirname
 #        self.zip_file = zip_file
@@ -103,6 +137,13 @@ class bundler(object):
     def bundle(self, dirname, zip_file = None, is_source = False):
         self.dirname = dirname
         self.zip_file = zip_file
+        if zip_file is not None:
+            dest_file = os.path.join(self.dirname, self.zip_file)
+            if not check_file_timeout(dest_file, 
+                                      [bb[0] for bb in self.zip_files], 
+                                      ignore = ['__pycache__']):
+                print("%s reused." % dest_file)
+                return
         self.is_compress = False if self.zip_file is None else True 
         self.bundle_init()
         self.compile_objs(self.zip_files, cdir = self.root,
@@ -304,7 +345,7 @@ def get_libcore():
     '''
     Test for Python3.5
     '''
-    lib = bundler()
+    lib = Bundler()
     lib.zip_file = r'libcore.zip'
     lib.add_module('encodings')
     lib.add_module('collections')
@@ -341,7 +382,7 @@ def get_libcore():
 
 def get_libext():
     libcore = get_libcore()
-    libext = bundler()
+    libext = Bundler()
     libext.zip_file = r'libext.zip'
     libext.skip_modules(libcore.modules)
     return libext
