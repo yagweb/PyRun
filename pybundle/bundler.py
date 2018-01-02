@@ -12,7 +12,29 @@ import py_compile
 import glob
 
 python_source_lib = os.path.abspath(os.path.dirname(os.__file__))
-  
+    
+def copy_file_if_newer(src, dest):
+    if not os.path.exists(src):
+        raise Exception("%s not exist" % dest)
+    if not os.path.exists(dest) or \
+       os.stat(src).st_mtime > os.stat(dest).st_mtime:
+        shutil.copy(src, dest)
+        print("%s update." % dest)
+        return
+    print("%s reused." % dest) 
+
+def is_file_out_of_date(file, references):
+    if os.path.exists(file):
+        for source in references:
+            if os.stat(source).st_mtime > os.stat(file).st_mtime:
+                return True
+                break 
+    return False
+            
+def remove_file_if_out_of_date(file, references):
+    if is_file_out_of_date(file, references):
+        print("file '%s' is out of date" % file)
+        os.remove(file)
 
 class FileUtil(object):
     def  __init__(self):
