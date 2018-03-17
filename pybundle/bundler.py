@@ -1,333 +1,87 @@
 # -*- coding: utf-8 -*-
 """
-@author: YangWenguang
-Issues contact with: hbtmdxywg@126.com
+Created on Sat Mar 17 00:03:50 2018
+
+@author: yagweb
 """
 import os
-import sys
-import time
-import zipfile
-import shutil
-import py_compile
-import glob
+from .bundler_unit import ModuleList, BundlerUnit
+from .bundler_modules._python import bundle_python
 
-from .file_utils import file_util, check_file_timeout
+def get_pyver():
+    import platform
+    temp = platform.python_version().split('.')
+    pyver = "%s%s" % (temp[0], temp[1])
+    return pyver
 
-python_source_lib = os.path.abspath(os.path.dirname(os.__file__))
-
-class ModuleList(object):
-    '''
-    shared by multiple Bundlers
-    '''
-    def __init__(self):
-        self.modules = []  #must use fullname, modules in the dictionary will be skipped
-        # modules in the python dll, has not __file__ attr
-        self.modules.append('itertools')
-        self.modules.append('sys')
-        self.modules.append('builtins') 
-        
-    def skip_module(self, name):
-        if name in self.modules:
-            return
-        self.modules.append(name)
-        
-    def skip_modules(self, names):        
-        for name in names:
-            if name in self.modules:
-                continue
-            self.modules.append(name)    
-        
-    def add_module(self, name):
-        if name in self.modules:
-            return False
-        self.modules.append(name) 
-        return True
-    
 class Bundler(object):
-    def __init__(self, name : str, modules : ModuleList, 
-                 is_compress = False, 
-               is_source = False, is_clear = False, 
-               lib_dir = None, 
-               dll_dir = None,
-               pyd_dir = None):
-        self.name = name        
-        self.compile_files = [] #try to compile first
-        self.dll_files = []
-        self.subpyd_files = {} #name, fullpath
-        self.copy_files = []
-        self.modules = modules
+    def __init__(self, dirname):
+        self.dirname = dirname
+        self.lib_dir = os.path.join(dirname, "packages")
+        self.pyd_dir = os.path.join(dirname, "extensions")
+        self.dll_dir = os.path.join(dirname, "DLLs")
+        self.create_methods = {}
+        self.pyver = get_pyver()
+        self.modules = ModuleList()
         
-        self.initialize(is_compress = is_compress, 
-               is_source = is_source, is_clear = is_clear, 
-               lib_dir = lib_dir, 
-               dll_dir = dll_dir,
-               pyd_dir = pyd_dir)
-            
-    def initialize(self, is_compress = False, 
-               is_source = False, is_clear = False, 
-               lib_dir = None, 
-               dll_dir = None,
-               pyd_dir = None):
-        self.dirname = lib_dir
-        self.is_source = is_source
-        self.is_clear = is_clear
-        self.dll_dir = lib_dir if dll_dir is None else dll_dir
-        self.pyd_dir = lib_dir if pyd_dir is None else pyd_dir
-        self.is_compress = is_compress
-        if is_compress:
-            self.zip_file = "%s.zip" % self.name
-        else:
-            self.zip_file = None
-            
-    def add_path(self, path, dest = None):       
-        if os.path.isfile(path):
-            if path.endswith(file_util.mod_ext):
-                mod_name = file_util.get_mod_name(path)
-                self.subpyd_files[mod_name] = path
-            elif path.endswith(file_util.dll_ext):
-                self.dll_files.append(path)
-            else:
-                self.compile_files.append((path, dest))                
-        else:
-            self.compile_files.append((path, dest))
-                        
-    def add_module(self, name):
-        if not self.modules.add_module(name):
-            return
-        names = name.split(".")
-        if len(names) == 1:
-            module = __import__(name)
-        else:
-            module_name = names[-1]
-            package_name = '.'.join(names[:-1])
-            temp = {}
-            exec("from {0} import {1}".format(package_name, module_name), temp)
-            module = temp[module_name]
-        path = module.__file__
-        if(path.endswith('__init__.py')):
-            path = os.path.dirname(path) 
-        self.add_path(path)
-
-    def bundle(self):
-        if self.is_compress:
-            dest_file = os.path.join(self.dirname, self.zip_file)
-            if self.is_clear:
-                os.remove(dest_file)
-            elif not check_file_timeout(dest_file, 
-                                      [bb[0] for bb in self.compile_files], 
-                                      ignore = ['__pycache__']):
-                print("%s reused." % dest_file)
-                return
-            
-        self.__init_dir()        
-        # 编译所有py文件，要拷贝的，放入copy目录中
-        self.compile_objs(self.compile_files, cdir = self.root,
-                      ignore = ['__pycache__'], is_source = self.is_source)
-        self.compress()
-        #拷贝其他文件
-        self.copy()
+        self.units = {}
         
-    def __init_dir(self): 
-        #folder init
-        if not os.path.exists(self.dirname):
-            os.mkdir(self.dirname)
-        if not os.path.exists(self.dll_dir):
-            os.mkdir(self.dll_dir)
-        if not os.path.exists(self.pyd_dir):
-            os.mkdir(self.pyd_dir)
+        # core bundler, unique
+        self.core_unit = self.create_unit('core', 'core')
+        bundle_python(self.core_unit)
         
-        if self.is_compress: # create a temp folder
-            self.root = os.path.abspath('temp%d' % time.time())
+        #register some basic modules
+        from .bundler_modules import _ctypes
+        self.register_module(_ctypes)
+        from .bundler_modules import _socket
+        self.register_module(_socket)
+        from .bundler_modules import _numpy 
+        self.register_module(_numpy)
+        
+    def register_module(self, module):        
+        module_name, method = module.get_method(self.pyver)
+        if method is None:
+            raise Exception('%s is not supported for python %s' % (module_name, self.pyver))
+        self.create_methods[module_name] = method
+            
+    def create_unit(self, name, dependency_name = None):
+        if name in self.units:
+            raise Exception('bundler %s has exists' % name)
+        
+        bundler = BundlerUnit(name, self.modules,
+                              lib_dir = self.lib_dir, 
+                              dll_dir = self.dll_dir,
+                              pyd_dir = self.pyd_dir)
+        if dependency_name == name:
+            dependency = bundler
+        elif dependency_name is None:
+            dependency = self.core_unit
         else:
-            self.root = self.dirname
-        if not os.path.exists(self.root) or not os.path.isdir(self.root):
-            os.mkdir(self.root)
-            
-    def compress(self):
-        if not self.is_compress:
-            return
-        zip_file = os.path.join(self.dirname, self.zip_file)
-        print('bundle start %s' % zip_file) 
-        compile_zip(zip_file, self.root, [])      
-        print('bundle end') 
-        print('remove the temp folder')
-        shutil.rmtree(self.root)
-                
-    def copy(self):
-        dirname = self.dirname
+            dependency = self.units[name][0]
+        self.units[name] = (bundler, dependency)
+        return bundler
         
-        #dll 文件处理
-        for file in self.dll_files:
-            file_name = os.path.basename(file)
-            shutil.copy(file, os.path.join(self.dll_dir, file_name))
-        
-        for name, file in self.subpyd_files.items():
-            shutil.copy(file, os.path.join(self.pyd_dir, name))
-        
-        for file, dest in self.copy_files:
-            if dest:
-                destfile = os.path.join(dirname, dest)
-                _dirname = os.path.dirname(destfile)
-                if not os.path.exists(_dirname):
-                    os.mkdir(_dirname)
-                shutil.copy(file, destfile) 
-            else:
-                shutil.copy(file, os.path.join(dirname, os.path.basename(file))) 
-            
-    def compile_objs(self, files, cdir, ignore=['__pycache__'], 
-                      maxlevels=10, ddir=None, optimize=-1, is_source = False):
-        print('bundle %s start' % self.name)
-        def _compile_obj(file, cdir, newname):
-            _file = os.path.abspath(file)
-            if not os.path.exists(_file):
-                success = False
-                print("file '%s' not exist" % file)
-                return success
-            if os.path.isdir(_file):
-                success = self.compile_dir(_file, cdir, newname, ignore = ignore, 
-                                      maxlevels=10, ddir=None, 
-                                      optimize=-1, is_source = is_source)
-            else:
-                success = self.compile_file(_file, cdir, newname, ddir, 
-                                       optimize, is_source = is_source)
-            return success
-        success = True
-        for file, dest in files:
-            if dest:
-                newname = os.path.basename(dest)
-                _cdir = os.path.join(cdir, os.path.dirname(dest)) 
-            else :
-                _cdir = cdir
-                newname = None
-            print("compile file '%s'" % file)
-            if "*" in file or "?" in file or "[" in file:
-                _files = glob.glob(file)
-                for file in _files:
-                    print("--compile file '%s'" % file)
-                    success = _compile_obj(file, _cdir, newname)
-            else:
-                success = _compile_obj(file, _cdir, newname)
-            if not success:
-                break
-        if success:
-            print('bundle %s successed.' % self.name)
+    def get_unit(self, name):
+        return self.units[name][0]
+ 
+    def add_module_to_unit(self, module_name, bundler):
+        if isinstance(bundler, str):
+            bundler_name = bundler
         else:
-            print('bundle %s failed.' % self.name)  
-            
-    def compile_file(self, fullname, cdir, newname = None, ddir=None, optimize = -1, is_source = False):
-        if not os.path.exists(cdir):
-            os.mkdir(cdir)
-        elif not os.path.isdir(cdir):
-            raise Exception('%s is not a folder' % cdir)
-        name = newname if newname else os.path.basename(fullname)
-        if ddir is not None:
-            dfile = os.path.join(ddir, name)
-        else:
-            dfile = None
-        tail = os.path.splitext(name)[1]
-        if '~' in tail: #".c~c":
-#            print('skipping file {0}'.format(fullname))
-            return True
-        elif self.is_compress and tail == file_util.mod_ext:
-            arcname = os.path.relpath(cdir, self.root).replace("\\", ".").replace(r"/", ".")
-            if arcname:
-                pydname = '{0}.{1}'.format(arcname, name)
-            else:
-                pydname = name
-            self.subpyd_files[pydname] = fullname #excluded from the zipfile
-            return True
-        elif self.is_compress and tail == file_util.dll_ext:
-            self.copy_files.append((fullname, None)) #excluded from the zipfile
-            return True
-        elif is_source or tail != '.py': #copy directly
-            cfile = os.path.join(cdir, name)
-            print('copying file {0} to {1}'.format(fullname, cfile))
-            shutil.copy(fullname, cfile) 
-            return True
-        try:
-            cfile = os.path.join(cdir, name) + ('c' if __debug__ else 'o')
-            print('compile file {0} to {1}'.format(fullname, cfile))
-            py_compile.compile(fullname, cfile, dfile, True,
-                                optimize=optimize)
-            return True
-        except Exception as ex:
-            print('Exception: %s' % str(ex))
-            return False
-            
-    def compile_dir(self, dir, cdir, newname = None, ignore=['__pycache__'], 
-                    maxlevels=10, ddir=None, 
-                    optimize=-1, is_source = False):
-        if cdir is None:
-            cdir = os.path.abspath('.')
-        if not os.path.exists(cdir):
-            os.mkdir(cdir)
-        elif not os.path.isdir(cdir):
-            raise Exception('%s is not a folder' % cdir)
-        name = newname if newname else os.path.basename(dir)
-        cdir = os.path.join(cdir, name)
-        print('Listing {!r}...'.format(dir))
-        names = os.listdir(dir)    
-        names.sort()
-        success = True
-        for name in names:
-            if name in ignore:
-                continue
-            fullname = os.path.join(dir, name)
-            if not os.path.isdir(fullname):
-                success = self.compile_file(fullname, cdir, None, ddir, optimize, is_source = is_source)
-                if not success:
-                    return success
-            elif (maxlevels > 0 and name != os.curdir and name != os.pardir and
-                  os.path.isdir(fullname) and not os.path.islink(fullname)):
-                success = self.compile_dir(fullname, cdir, None,
-                                      ignore, maxlevels - 1, 
-                                      ddir, optimize, is_source = is_source)
-                if not success:
-                    return success
-        return success
-   
-def compile_zip(path, dir, excludes = []):
-    #zpfd = zipfile.ZipFile(path, mode='w', compression=zipfile.ZIP_DEFLATED)
-    zpfd = zipfile.ZipFile(path, mode='w')
-    def zip_dir(_dir):
-        for dirpath, dirnames, filenames in os.walk(_dir, True):
-            for filename in filenames:
-                fullname = os.path.join(dirpath, filename)
-                arcname = os.path.relpath(fullname, dir)
-                print('Add... ' + arcname)
-                zpfd.write(fullname, arcname)        
-    if len(excludes) == 0:
-        zip_dir(dir)
-    else:
-        for _file in os.listdir(dir):
-            if _file in excludes:
-                continue
-            fullname = os.path.join(dir, _file)
-            if os.path.isdir(fullname):
-                zip_dir(fullname)
-            else:
-                arcname = os.path.relpath(fullname, dir)
-                print('Add... ' + arcname)
-                zpfd.write(fullname, arcname)
-    zpfd.close()    
-            
-def delete_from_zip(zip_path, delete_dirs, delete_files=[]):
-    print('delete from zip file')
-    zin = zipfile.ZipFile (zip_path, 'r')
-    new_zipfile = zip_path + '.temp.zip' #create a new file
-    zout = zipfile.ZipFile (new_zipfile, 'w')
-    for item in zin.infolist():
-#        print(item.filename)
-        temp = os.path.dirname(item.filename)
-        dirname = temp
-        while temp:
-            dirname = temp
-            temp = os.path.dirname(dirname)
-        if dirname in delete_dirs or item.filename in delete_files:  #remove the file
-            continue
-        buffer = zin.read(item.filename)
-        zout.writestr(item, buffer) #write file into the zip
-    zout.close()
-    zin.close()     
-    #override, if the file existed
-    shutil.move(new_zipfile, zip_path) 
+            bundler_name = bundler.name
+        method = self.create_methods.get(module_name, None)
+        if method is None:
+            raise Exception("module '%s' not supported" % module_name)
+        #add
+        bundler, dependency = self.units[bundler_name]
+        method(bundler, dependency)
+        
+    def bundle(self, name, is_compress = True, is_clear = True):
+        unit = self.get_unit(name)
+        unit.bundle(is_compress = is_compress, 
+                    is_clear = is_clear)
+        
+    def bundle_all(self, is_compress = True, is_clear = True):
+        for unit in self.units.values():
+            unit.bundle(is_compress = is_compress, 
+                        is_clear = is_clear)

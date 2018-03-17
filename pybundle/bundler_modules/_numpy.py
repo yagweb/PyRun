@@ -15,7 +15,9 @@ def get_method(pyver):
     return 'numpy', method
 
 def add_numpy_py36(bundler, dependency):
-    bundler.add_module('numpy')
+    bundler.add_module('numpy',
+                       ignore = ['doc',
+                                 'f2py', 'testing', 'tests'])
     #Windows Anaconda
     mkldir = os.path.join(sys.prefix, 'Library/bin')
     #WinPython
