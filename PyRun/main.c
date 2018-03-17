@@ -24,13 +24,15 @@ wmain(int argc, wchar_t **argv)
 
 	/*Set PATH for dll search, It cannot be used for pythonXX.dll, 
 	  because this dll is needed before the wmain executed*/
-	const wchar_t *os_path = _wgetenv("PATH");
+	const wchar_t *os_path = _wgetenv(L"PATH");
+	const char *os_path1 = getenv("PATH");
 	wchar_t* path_env = malloc((wcslen(os_path) + 1024) * 2);
 	wchar_t* pos = path_env;
-	pos = wcs_append(pos, "PATH=");
+	pos = wcs_append(pos, L"PATH=");
 	pos = wcs_append(pos, path);
+	//pos = wcs_append(pos, L"/../DLLs;C:/Anaconda3/Library/bin;"); //debug dlls
 	pos = wcs_append(pos, L"/../DLLs;");
-	pos = wcs_append(pos, os_path);
+	//pos = wcs_append(pos, os_path); //comment this, and import sqlite3 to test dll finder
 	int iRet = _wputenv(path_env);
 	free(path_env);
 	if (iRet < 0)
@@ -39,28 +41,25 @@ wmain(int argc, wchar_t **argv)
 		return 1;
 	}
 
-	/*Get the absolute path of the libcore.zip*/
+	/*Get the absolute path of the python.zip*/
 	wchar_t libpath[1024];
 	pos = libpath;
 	pos = wcs_append(pos, path);
-	pos = wcs_append(pos, L"/../libcore.zip;");
+	pos = wcs_append(pos, L"/../packages/python.zip;");
 	pos = wcs_append(pos, path);
 	pos = wcs_append(pos, L"/../packages;");
+	//pos = wcs_append(pos, L"/../packages;D:/git/PyRun/pybundle;"); //debug hook
 	//printf("%ls", libpath);
 	Py_SetPath(libpath); // absolute path of libcore.zip is need when debug
 	Py_Initialize();
 	PySys_SetArgv(argc, argv); //Set sys.argv
-	PyRun_SimpleString("import os\n"
-		"import sys\n"
-		"if not os.path.exists('packages') or os.path.isfile('packages'):\n"
-		"    os.mkdir('packages')\n"
-		"sys.path.append('packages')\n"
-		"for name in os.listdir('packages'):\n"
-		"    path = os.path.join('packages', name)\n"
-		"    if(os.path.isfile(path) and name.endswith('.zip')):\n"
-		"        sys.path.append(path)\n");
+	PyRun_SimpleString("import hook\n"
+		"hook.register()\n"
+	);
 	PyRun_SimpleString("try:\n"
-		"    __import__(os.path.splitext(os.path.basename(sys.argv[0]))[0])\n"
+		"    import os, sys\n"
+		"    module = os.path.splitext(os.path.basename(sys.argv[0]))[0]\n"
+		"    __import__(module)\n"
 		"except Exception as ex:\n"
 		"    print('>>>>>>>>')\n"
 		"    print(ex)\n"

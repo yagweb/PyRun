@@ -24,7 +24,7 @@ def add_numpy_py36(bundler, dependency):
     #import numpy
     #mkldir = os.path.join(sys.prefix, os.path.join(numpy.__file__, "../core"))
     for mkl in ('libiomp5md', 'mkl_avx2', 'mkl_core', 'mkl_intel_thread', 'mkl_rt'):
-        dependency.add_path(mkldir + os.path.sep + mkl+'.dll')
+        bundler.add_path(mkldir + os.path.sep + mkl+'.dll')
     dependency.add_module('__future__')
     dependency.add_module('warnings')
     

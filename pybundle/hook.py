@@ -12,21 +12,12 @@ class PyRunLoader:
         self.path = path
         
     def load_module(self, fullname):
-        import platform
-        import os
-        if platform.system() != 'Windows':
-            temp = os.getcwd()
-            os.chdir(os.path.dirname(self.path))
-            mod = imp.load_dynamic(fullname, self.path) 
-            os.chdir(temp)
-        else:
-            mod = imp.load_dynamic(fullname, self.path)
-        return mod
+        return imp.load_dynamic(fullname, self.path)
     
 class PyRunFinder:
     def __init__(self, root):
         self.root = root
-        module_files = get_files(os.path.join(root, "../packages/"))
+        module_files = get_files(root)
         self.modules = {}
         for file_name, path in module_files:
             if file_name.endswith(".pyd"):
@@ -40,15 +31,15 @@ class PyRunFinder:
             return PyRunLoader(self.modules[fullname])            
         return None        
 
-def register_ext_modules(root):
-    files = get_files(os.path.join(root, "../packages/"))
+def register_packages(root):
+    files = get_files(os.path.join(root, "packages"))
     for file_name, path in files:
         if file_name.endswith(".zip"):
             sys.path.append(os.path.abspath(path))            
         
-def register(init_path):
-    root = os.path.dirname(init_path)    
-    register_ext_modules(root)    
-    finder = PyRunFinder(root)
+def register():
+    root = os.path.abspath(os.path.join(os.__file__, "../../../"))
+    register_packages(root)    
+    finder = PyRunFinder(os.path.join(root, "extensions"))
     if len(finder.modules) != 0:
         sys.meta_path.append(finder)

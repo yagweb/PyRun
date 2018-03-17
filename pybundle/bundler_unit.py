@@ -25,6 +25,7 @@ class ModuleList(object):
         self.modules.append('itertools')
         self.modules.append('sys')
         self.modules.append('builtins') 
+        self.modules.append('time') 
         
     def skip_module(self, name):
         if name in self.modules:
@@ -84,7 +85,9 @@ class BundlerUnit(object):
             zip_file = None
         return zip_file
             
-    def add_path(self, path, dest = None, ignore = ['__pycache__']):       
+    def add_path(self, path, dest = None, ignore = ['__pycache__']): 
+        if not os.path.exists(path):
+            raise Exception("file %s not exists" % path)
         if os.path.isfile(path):
             if path.endswith(file_util.mod_ext):
                 mod_name = file_util.get_mod_name(path)

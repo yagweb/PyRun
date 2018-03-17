@@ -3,7 +3,7 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros">
     <BuildPath>$(ProjectDir)..\bin\Win</BuildPath>
-    <PythonPath>..\..\Python-3.5.2\</PythonPath>
+    <PythonPath>..\..\Python-3.6.4\</PythonPath>
   </PropertyGroup>
   <PropertyGroup />
   <ItemDefinitionGroup />
