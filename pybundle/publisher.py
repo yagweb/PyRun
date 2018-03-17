@@ -9,7 +9,7 @@ import glob
 import shutil
 import platform
 from collections import OrderedDict
-from .bundler import file_util, copy_file_if_newer
+from .file_utils import file_util, copy_file_if_newer
         
 class DirRecord(object):
     def __init__(self, name, root, is_exists):

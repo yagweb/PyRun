@@ -1,7 +1,13 @@
-// ExEngineCore.cpp : 定义控制台应用程序的入口点。
-//
 #include "Python.h"
 #include <stdio.h>
+#include <stdlib.h>
+
+wchar_t* wcs_append(wchar_t* pos, const wchar_t* content)
+{
+	wcscpy(pos, content);
+	pos = pos + wcslen(content);
+	return pos;
+}
 
 int
 wmain(int argc, wchar_t **argv)
@@ -11,18 +17,35 @@ wmain(int argc, wchar_t **argv)
 	Py_OptimizeFlag = 2; //1 for -O, and 2 for -OO
 	Py_NoSiteFlag = 1; //why need site module?
 	Py_SetProgramName(L"PyRun");
-	/*Get the absolute path of the libcore.zip*/
+
+	/*Get the absolute path of the program*/
 	//wchar_t *path = Py_GetProgramFullPath();
 	wchar_t *path = argv[0];
+
+	/*Set PATH for dll search, It cannot be used for pythonXX.dll, 
+	  because this dll is needed before the wmain executed*/
+	const wchar_t *os_path = _wgetenv("PATH");
+	wchar_t* path_env = malloc((wcslen(os_path) + 1024) * 2);
+	wchar_t* pos = path_env;
+	pos = wcs_append(pos, "PATH=");
+	pos = wcs_append(pos, path);
+	pos = wcs_append(pos, L"/../DLLs;");
+	pos = wcs_append(pos, os_path);
+	int iRet = _wputenv(path_env);
+	free(path_env);
+	if (iRet < 0)
+	{
+		printf("set PATH error\n");
+		return 1;
+	}
+
+	/*Get the absolute path of the libcore.zip*/
 	wchar_t libpath[1024];
-	wcscpy(libpath, path);
-	wchar_t *pos = libpath + wcslen(path);
-	wcscpy(pos, L"/../libcore.zip;");
-	//add packages
-	pos = libpath + wcslen(libpath);
-	wcscpy(pos, path);
-	pos = libpath + wcslen(libpath);
-	wcscpy(pos, L"/../packages;");
+	pos = libpath;
+	pos = wcs_append(pos, path);
+	pos = wcs_append(pos, L"/../libcore.zip;");
+	pos = wcs_append(pos, path);
+	pos = wcs_append(pos, L"/../packages;");
 	//printf("%ls", libpath);
 	Py_SetPath(libpath); // absolute path of libcore.zip is need when debug
 	Py_Initialize();
@@ -47,4 +70,3 @@ wmain(int argc, wchar_t **argv)
 	Py_Finalize();
 	return 0;
 }
-

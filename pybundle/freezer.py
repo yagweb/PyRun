@@ -10,6 +10,16 @@ solution for some compile errors:
         bug:Find the hooks.py file in cx_freeze folder. Change line 548 from finder.
         IncludePackage("scipy.lib") to finder.IncludePackage("scipy._lib").
 
+It's not a good idea to use freezer:
+    打包后，900M！！
+    自动模块搜索并不智能！eg，一些复杂的模块也要手动处理
+    库不全，修改后重新运行，又怎么拷贝，我只想更新某个模块而已
+
+    bundler,而不是用Freezer，不自动找模块，程序员自己定义：
+    
+    动态生成一个main.c，调用编译器编译
+    DLLs - 目录，exe启动时修改环境变量，hooks找扩展模块，zip和egg中的模块等。
+
 @author: yagweb
 """
 import os
@@ -24,7 +34,7 @@ def get_files(folders):
                 files.append((f1, os.path.join(relative_path, file)))    
     return files
     
-class freezer():
+class Freezer():
     def __init__(self):
         #include_files files in folder will be added automatically
         #type of item can be str or (str, str).former is relative path to this script
@@ -32,6 +42,7 @@ class freezer():
         self.zip_includes = []
         self.packages = []
         self.executables = []
+    
     def add_numpy(self):
         import numpy
         ETS_folder = os.path.abspath(os.path.join(numpy.__file__, "../../"))
@@ -41,6 +52,7 @@ class freezer():
         binaries = [(mkldir + os.path.sep + mkl+'.dll', mkl+'.dll') \
                     for mkl in ('libiomp5md', 'mkl_avx2', 'mkl_core', 'mkl_intel_thread', 'mkl_p4', 'mkl_rt')]
         self.include_files.extend(binaries)
+    
     def add_traitsui(self):
         import traitsui
         ETS_folder = os.path.abspath(os.path.join(traitsui.__file__, "../../"))
@@ -53,6 +65,7 @@ class freezer():
         self.zip_includes.extend(get_files(folders))
         self.packages.extend(["pyface.ui.qt4",
                               "traitsui.qt4"])
+    
     def add_matplotlib(self):
         #(matplotlib.get_data_path(), "mpl-data")
         self.packages.extend(["matplotlib.backends.backend_qt4agg",
@@ -72,6 +85,7 @@ class freezer():
                        targetName = targetName, 
                        icon = icon,
                        base = base))
+    
     def build(self, name, dest_path, version = '1.0', description = '', startscript = None):
         build_exe_options = {"build_exe" : dest_path,
                              "include_msvcr" : True,

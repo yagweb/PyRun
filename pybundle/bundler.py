@@ -11,178 +11,137 @@ import shutil
 import py_compile
 import glob
 
+from .file_utils import file_util, check_file_timeout
+
 python_source_lib = os.path.abspath(os.path.dirname(os.__file__))
-    
-def copy_file_if_newer(src, dest):
-    if not os.path.exists(src):
-        raise Exception("%s not exist" % dest)
-    if not os.path.exists(dest) or \
-       os.stat(src).st_mtime > os.stat(dest).st_mtime:
-        shutil.copy(src, dest)
-        print("%s update." % dest)
-        return
-    print("%s reused." % dest) 
 
-def is_file_out_of_date(file, references):
-    if os.path.exists(file):
-        for source in references:
-            if os.stat(source).st_mtime > os.stat(file).st_mtime:
-                return True
-                break 
-    return False
-            
-def remove_file_if_out_of_date(file, references):
-    if is_file_out_of_date(file, references):
-        print("file '%s' is out of date" % file)
-        os.remove(file)
-
-class FileUtil(object):
-    def  __init__(self):
-        import platform
-        temp = platform.python_version().split('.')
-        pyver = "%s%s" % (temp[0], temp[1])
-        if platform.system() == "Windows":
-            self.mod_ext = ".cp%s-win_amd64.pyd" % pyver
-            self.dll_prefix = ""
-            self.dll_ext = ".dll"
-        else:
-            self.mod_ext = ".cpython-%sm-x86_64-linux-gnu.so" % pyver
-            self.dll_prefix = "lib"
-            self.dll_ext = ".so"
-            
-    def get_mod_file(self, mod_name):
-        return mod_name + self.mod_ext
-    
-    def get_mod_files(self, mod_names):
-        return [mod_name + self.mod_ext for mod_name in mod_names]
-            
-    def get_dll_file(self, dll):
-        temp = dll.replace("\\", "/").split("/")
-        temp[-1] = self.dll_prefix + temp[-1] + self.dll_ext
-        return "/".join(temp)
-    
-    def get_dll_files(self, dlls):
-        return [self.get_file(dll) for dll in dlls]
-    
-file_util = FileUtil()
- 
-def check_file_timeout(dest_file, dependencies, ignore = ['__pycache__']):
-    if dest_file is None:
-        return True 
-    if not os.path.exists(dest_file):
-        return True
-    file_mtime = os.stat(dest_file).st_mtime
-    
-    def check_file(file):
-        if os.stat(file).st_mtime > file_mtime:
-            return True
-        return False
-    
-    def check_dir(dir):  
-        for name in os.listdir(dir):
-            if name in ignore:
-                continue
-            file = os.path.join(dir, name)
-            if check(file):
-                return True
-        return False
-    
-    def check(file):
-        if os.stat(file).st_mtime > file_mtime:
-            return True
-        if os.path.isdir(file):
-            return check_dir(file)
-        else:
-            return check_file(file) 
-        
-    for file in dependencies:
-        if check(file):
-            return True
-    return False
-    
-class Bundler(object):
+class ModuleList(object):
+    '''
+    shared by multiple Bundlers
+    '''
     def __init__(self):
-#        self.dirname = dirname
-#        self.zip_file = zip_file
-#        self.is_compress = False if zip_file is None else True 
-        self.zip_files = []
-        self.copy_files = []
-        self.subpyd_files = {} #name, fullpath
         self.modules = []  #must use fullname, modules in the dictionary will be skipped
-        #modules in the python dll, has not __file__ attr
+        # modules in the python dll, has not __file__ attr
         self.modules.append('itertools')
         self.modules.append('sys')
         self.modules.append('builtins') 
-            
-    def add_path(self, path, dest = None, is_zip = True):
-        if is_zip and os.path.isfile(path):
-            tail = os.path.splitext(path)[1]
-            if tail in ['.pyd', '.dll', '.so']:
-                is_zip = False
-        if is_zip:
-            self.zip_files.append((path, dest))
-        else:
-            self.copy_files.append((path, dest))   
-                
+        
     def skip_module(self, name):
         if name in self.modules:
             return
         self.modules.append(name)
         
-    def skip_modules(self, names):
+    def skip_modules(self, names):        
         for name in names:
             if name in self.modules:
                 continue
-            self.modules.append(name)   
-            
+            self.modules.append(name)    
+        
     def add_module(self, name):
         if name in self.modules:
+            return False
+        self.modules.append(name) 
+        return True
+    
+class Bundler(object):
+    def __init__(self, name : str, modules : ModuleList, 
+                 is_compress = False, 
+               is_source = False, is_clear = False, 
+               lib_dir = None, 
+               dll_dir = None,
+               pyd_dir = None):
+        self.name = name        
+        self.compile_files = [] #try to compile first
+        self.dll_files = []
+        self.subpyd_files = {} #name, fullpath
+        self.copy_files = []
+        self.modules = modules
+        
+        self.initialize(is_compress = is_compress, 
+               is_source = is_source, is_clear = is_clear, 
+               lib_dir = lib_dir, 
+               dll_dir = dll_dir,
+               pyd_dir = pyd_dir)
+            
+    def initialize(self, is_compress = False, 
+               is_source = False, is_clear = False, 
+               lib_dir = None, 
+               dll_dir = None,
+               pyd_dir = None):
+        self.dirname = lib_dir
+        self.is_source = is_source
+        self.is_clear = is_clear
+        self.dll_dir = lib_dir if dll_dir is None else dll_dir
+        self.pyd_dir = lib_dir if pyd_dir is None else pyd_dir
+        self.is_compress = is_compress
+        if is_compress:
+            self.zip_file = "%s.zip" % self.name
+        else:
+            self.zip_file = None
+            
+    def add_path(self, path, dest = None):       
+        if os.path.isfile(path):
+            if path.endswith(file_util.mod_ext):
+                mod_name = file_util.get_mod_name(path)
+                self.subpyd_files[mod_name] = path
+            elif path.endswith(file_util.dll_ext):
+                self.dll_files.append(path)
+            else:
+                self.compile_files.append((path, dest))                
+        else:
+            self.compile_files.append((path, dest))
+                        
+    def add_module(self, name):
+        if not self.modules.add_module(name):
             return
-        self.modules.append(name)
         names = name.split(".")
         if len(names) == 1:
             module = __import__(name)
         else:
-            module_name= names[-1]
+            module_name = names[-1]
             package_name = '.'.join(names[:-1])
             temp = {}
             exec("from {0} import {1}".format(package_name, module_name), temp)
             module = temp[module_name]
-        file = os.path.dirname(module.__file__)
-        if(file.endswith('__init__.py')):
-            self.zip_files.append((os.path.dirname(file), None))
-        elif(file.endswith('so') or file.endswith('dll') or file.endswith('pyd')):
-            self.copy_files.append((file, None))
-        else:
-            self.zip_files.append((file, None))
-            
-    def bundle(self, dirname, zip_file = None, is_source = False):
-        self.dirname = dirname
-        self.zip_file = zip_file
-        if zip_file is not None:
+        path = module.__file__
+        if(path.endswith('__init__.py')):
+            path = os.path.dirname(path) 
+        self.add_path(path)
+
+    def bundle(self):
+        if self.is_compress:
             dest_file = os.path.join(self.dirname, self.zip_file)
-            if not check_file_timeout(dest_file, 
-                                      [bb[0] for bb in self.zip_files], 
+            if self.is_clear:
+                os.remove(dest_file)
+            elif not check_file_timeout(dest_file, 
+                                      [bb[0] for bb in self.compile_files], 
                                       ignore = ['__pycache__']):
                 print("%s reused." % dest_file)
                 return
-        self.is_compress = False if self.zip_file is None else True 
-        self.bundle_init()
-        self.compile_objs(self.zip_files, cdir = self.root,
-                      ignore = ['__pycache__'], is_source = is_source)
+            
+        self.__init_dir()        
+        # 编译所有py文件，要拷贝的，放入copy目录中
+        self.compile_objs(self.compile_files, cdir = self.root,
+                      ignore = ['__pycache__'], is_source = self.is_source)
         self.compress()
+        #拷贝其他文件
         self.copy()
         
-    def bundle_init(self): 
+    def __init_dir(self): 
         #folder init
         if not os.path.exists(self.dirname):
             os.mkdir(self.dirname)
-        if self.is_compress: #create a temp folder
+        if not os.path.exists(self.dll_dir):
+            os.mkdir(self.dll_dir)
+        if not os.path.exists(self.pyd_dir):
+            os.mkdir(self.pyd_dir)
+        
+        if self.is_compress: # create a temp folder
             self.root = os.path.abspath('temp%d' % time.time())
         else:
             self.root = self.dirname
         if not os.path.exists(self.root) or not os.path.isdir(self.root):
-            os.mkdir(self.root)   
+            os.mkdir(self.root)
             
     def compress(self):
         if not self.is_compress:
@@ -194,8 +153,17 @@ class Bundler(object):
         print('remove the temp folder')
         shutil.rmtree(self.root)
                 
-    def copy(self): 
+    def copy(self):
         dirname = self.dirname
+        
+        #dll 文件处理
+        for file in self.dll_files:
+            file_name = os.path.basename(file)
+            shutil.copy(file, os.path.join(self.dll_dir, file_name))
+        
+        for name, file in self.subpyd_files.items():
+            shutil.copy(file, os.path.join(self.pyd_dir, name))
+        
         for file, dest in self.copy_files:
             if dest:
                 destfile = os.path.join(dirname, dest)
@@ -205,12 +173,10 @@ class Bundler(object):
                 shutil.copy(file, destfile) 
             else:
                 shutil.copy(file, os.path.join(dirname, os.path.basename(file))) 
-        for name, file in self.subpyd_files.items():
-            shutil.copy(file, os.path.join(dirname, name)) 
             
     def compile_objs(self, files, cdir, ignore=['__pycache__'], 
                       maxlevels=10, ddir=None, optimize=-1, is_source = False):
-        print('compile start')
+        print('bundle %s start' % self.name)
         def _compile_obj(file, cdir, newname):
             _file = os.path.abspath(file)
             if not os.path.exists(_file):
@@ -244,9 +210,9 @@ class Bundler(object):
             if not success:
                 break
         if success:
-            print('compile successed.')
+            print('bundle %s successed.' % self.name)
         else:
-            print('compile failed.')  
+            print('bundle %s failed.' % self.name)  
             
     def compile_file(self, fullname, cdir, newname = None, ddir=None, optimize = -1, is_source = False):
         if not os.path.exists(cdir):
@@ -259,16 +225,19 @@ class Bundler(object):
         else:
             dfile = None
         tail = os.path.splitext(name)[1]
-        if self.is_compress and tail in ['.so', '.dll', '.exe']:
-            self.copy_files.append((fullname, None)) #excluded from the zipfile
+        if '~' in tail: #".c~c":
+#            print('skipping file {0}'.format(fullname))
             return True
-        elif self.is_compress and tail in ['.pyd']:
+        elif self.is_compress and tail == file_util.mod_ext:
             arcname = os.path.relpath(cdir, self.root).replace("\\", ".").replace(r"/", ".")
             if arcname:
                 pydname = '{0}.{1}'.format(arcname, name)
             else:
                 pydname = name
             self.subpyd_files[pydname] = fullname #excluded from the zipfile
+            return True
+        elif self.is_compress and tail == file_util.dll_ext:
+            self.copy_files.append((fullname, None)) #excluded from the zipfile
             return True
         elif is_source or tail != '.py': #copy directly
             cfile = os.path.join(cdir, name)
@@ -361,79 +330,4 @@ def delete_from_zip(zip_path, delete_dirs, delete_files=[]):
     zout.close()
     zin.close()     
     #override, if the file existed
-    shutil.move(new_zipfile, zip_path)   
-     
-def get_libcore():
-    '''
-    Test for Python3.5
-    '''
-    lib = Bundler()
-    lib.zip_file = r'libcore.zip'
-    lib.add_module('encodings')
-    lib.add_module('collections')
-    lib.add_module('traceback')
-    lib.add_module('copyreg')
-    lib.add_module('abc')
-    lib.add_module('types')
-    lib.add_module('locale')
-    lib.add_module('functools')
-    lib.add_module('sre_constants')
-    lib.add_module('sre_parse')
-    lib.add_module('_bootlocale')
-    lib.add_module('linecache')
-    lib.add_module('_collections_abc')
-    lib.add_module('_weakrefset')
-    lib.add_module('reprlib')
-    lib.add_module('operator')
-    lib.add_module('heapq')
-    lib.add_module('io')
-    lib.add_module('re')
-    lib.add_module('sre_compile')
-    lib.add_module('weakref')
-    lib.add_module('keyword')
-    lib.add_module('codecs')
-    #site, may not need when Py_NoSiteFlag = 1?
-    lib.add_module('site')
-    lib.add_module('_sitebuiltins')
-    lib.add_module('os')
-    lib.add_module('stat')
-    lib.add_module('ntpath')
-    lib.add_module('genericpath')
-    lib.add_module('sysconfig')
-    return lib
-
-def get_libext():
-    libcore = get_libcore()
-    libext = Bundler()
-    libext.zip_file = r'libext.zip'
-    libext.skip_modules(libcore.modules)
-    return libext
-
-def add_ctypes(self, libext):
-    self.add_module('ctypes')
-    self.add_module('_ctypes')
-    libext.add_module('struct')
- 
-def add_numpy(self, libext):
-    '''
-    not working, because the 'multiarray' module
-    '''
-    self.add_module('numpy')
-    #Windows Anaconda
-    mkldir = os.path.join(sys.prefix, 'Library/bin')
-    #WinPython
-    #import numpy
-    #mkldir = os.path.join(sys.prefix, os.path.join(numpy.__file__, "../core"))
-    for mkl in ('libiomp5md', 'mkl_avx2', 'mkl_core', 'mkl_intel_thread', 'mkl_rt'):
-        libext.add_path(mkldir + os.path.sep + mkl+'.dll')
-    libext.add_module('__future__')
-    libext.add_module('warnings')
-
-def add_socket(self, libext):
-    self.add_module('socket')
-    self.add_module('_socket')
-    self.add_module('select') #pyd
-    libext.add_module('selectors')
-    libext.add_module('enum')
-    libext.add_module('tokenize')
-    libext.add_module('token')
+    shutil.move(new_zipfile, zip_path) 
