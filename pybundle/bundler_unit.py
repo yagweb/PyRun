@@ -11,7 +11,8 @@ import shutil
 import py_compile
 import glob
 
-from .file_utils import file_util, check_file_timeout
+from .file_utils import file_util, check_file_timeout, \
+    copy_file_if_newer
 
 python_source_lib = os.path.abspath(os.path.dirname(os.__file__))
 
@@ -177,10 +178,10 @@ class BundlerUnit(object):
         #dll 文件处理
         for file in self.dll_files:
             file_name = os.path.basename(file)
-            shutil.copy(file, os.path.join(self.dll_dir, file_name))
+            copy_file_if_newer(file, os.path.join(self.dll_dir, file_name))
         
         for name, file in self.subpyd_files.items():
-            shutil.copy(file, os.path.join(self.pyd_dir, name + '.pyd'))
+            copy_file_if_newer(file, os.path.join(self.pyd_dir, name + '.pyd'))
         
         for file, dest in self.copy_files:
             if dest:
@@ -188,9 +189,9 @@ class BundlerUnit(object):
                 _dirname = os.path.dirname(destfile)
                 if not os.path.exists(_dirname):
                     os.mkdir(_dirname)
-                shutil.copy(file, destfile) 
+                copy_file_if_newer(file, destfile) 
             else:
-                shutil.copy(file, os.path.join(dirname, os.path.basename(file))) 
+                copy_file_if_newer(file, os.path.join(dirname, os.path.basename(file))) 
             
     def compile_objs(self, maxlevels = 10, ddir = None, optimize = -1):
         files = self.compile_files

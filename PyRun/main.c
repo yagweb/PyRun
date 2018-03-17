@@ -31,6 +31,7 @@ wmain(int argc, wchar_t **argv)
 	pos = wcs_append(pos, L"PATH=");
 	pos = wcs_append(pos, path);
 	pos = wcs_append(pos, L"/../DLLs;");
+	//pos = wcs_append(pos, L"C:/Anaconda3/Library/bin;"); //for dll debug
 	pos = wcs_append(pos, os_path); //comment this, and import sqlite3 to test dll finder
 	int iRet = _wputenv(path_env);
 	free(path_env);

@@ -43,6 +43,13 @@ def bundle_numpy(dirname):
     bundler.add_module_to_unit('numpy', libext)
 #    libext.bundle(is_compress = True, is_clear = True)
     libext.bundle(is_compress = False)
+
+def bundle_PyQt5(dirname):
+    bundler = Bundler(dirname)
+    libext = bundler.create_unit('PyQt5', 'PyQt5')
+    bundler.add_module_to_unit('PyQt5', libext)
+#    libext.bundle(is_compress = True, is_clear = True)
+    libext.bundle(is_compress = False)
     
 def find_python_dll():
     #for windows
@@ -55,5 +62,6 @@ if __name__ == '__main__':
 #    bundle_socket(dirname)
 #    bundle_sqlite3(dirname)
 #    bundle_ctypes(dirname)
-    bundle_numpy(dirname)
+#    bundle_numpy(dirname)
+    bundle_PyQt5(dirname)
     

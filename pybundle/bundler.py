@@ -5,6 +5,7 @@ Created on Sat Mar 17 00:03:50 2018
 @author: yagweb
 """
 import os
+import sys
 import platform
 from .bundler_unit import ModuleList, BundlerUnit
 from .bundler_modules._python import bundle_python
@@ -51,15 +52,17 @@ class Bundler(object):
         self.register_module(_sqlite3)
         from .bundler_modules import _numpy 
         self.register_module(_numpy)
+        from .bundler_modules import _PyQt5 
+        self.register_module(_PyQt5)
         
     def copy_python_dll(self):
         if platform.system() == "Windows":
             name = 'python'+self.pyver+'.dll'
-            source = os.path.join(os.__file__, "../../", name)
+            source = os.path.join(sys.prefix, name)
             dest = os.path.join(self.dirname, name)
         else:
             name = 'python'+self.pyver+'.so'
-            source = os.path.join(os.__file__, "../../", name)
+            source = os.path.join(sys.prefix, name)
             dest = os.path.join(self.dirname, name)
         copy_file_if_newer(source, dest)
         
