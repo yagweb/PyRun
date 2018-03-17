@@ -30,9 +30,8 @@ wmain(int argc, wchar_t **argv)
 	wchar_t* pos = path_env;
 	pos = wcs_append(pos, L"PATH=");
 	pos = wcs_append(pos, path);
-	//pos = wcs_append(pos, L"/../DLLs;C:/Anaconda3/Library/bin;"); //debug dlls
 	pos = wcs_append(pos, L"/../DLLs;");
-	//pos = wcs_append(pos, os_path); //comment this, and import sqlite3 to test dll finder
+	pos = wcs_append(pos, os_path); //comment this, and import sqlite3 to test dll finder
 	int iRet = _wputenv(path_env);
 	free(path_env);
 	if (iRet < 0)
@@ -46,9 +45,7 @@ wmain(int argc, wchar_t **argv)
 	pos = libpath;
 	pos = wcs_append(pos, path);
 	pos = wcs_append(pos, L"/../packages/python.zip;");
-	pos = wcs_append(pos, path);
-	pos = wcs_append(pos, L"/../packages;");
-	//pos = wcs_append(pos, L"/../packages;D:/git/PyRun/pybundle;"); //debug hook
+	//pos = wcs_append(pos, L"D:/git/PyRun/pybundle;"); //debug hook
 	//printf("%ls", libpath);
 	Py_SetPath(libpath); // absolute path of libcore.zip is need when debug
 	Py_Initialize();

@@ -11,6 +11,7 @@ from pybundle import Bundler
 
 def bundle_core(dirname):    
     bundler = Bundler(dirname)
+    bundler.copy_python_dll()
 #    unit = bundler.get_unit('python')
 #    bundler.add_path("PyRun.py", "test/PyRun2.py", False)
 #    bundler.add_path("PyRun.py", "test/PyRun1.py", True)
@@ -38,9 +39,6 @@ def bundle_ctypes(dirname):
     
 def bundle_numpy(dirname):
     bundler = Bundler(dirname)
-    bundler.copy_python_dll()
-    import pdb
-    pdb.set_trace()
     libext = bundler.create_unit('numpy', 'numpy')
     bundler.add_module_to_unit('numpy', libext)
 #    libext.bundle(is_compress = True, is_clear = True)
@@ -53,9 +51,9 @@ def find_python_dll():
     
 if __name__ == '__main__':
     dirname = '../bin/'
-    bundle_core(dirname)
+#    bundle_core(dirname)
 #    bundle_socket(dirname)
 #    bundle_sqlite3(dirname)
 #    bundle_ctypes(dirname)
-#    bundle_numpy(dirname)
+    bundle_numpy(dirname)
     

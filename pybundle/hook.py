@@ -32,7 +32,9 @@ class PyRunFinder:
         return None        
 
 def register_packages(root):
-    files = get_files(os.path.join(root, "packages"))
+    packages = os.path.join(root, "packages")
+    sys.path.append(packages)
+    files = get_files(packages)
     for file_name, path in files:
         if file_name.endswith(".zip"):
             sys.path.append(os.path.abspath(path))            

@@ -36,7 +36,11 @@ class Bundler(object):
         self.python_unit.add_module("contextlib")
         self.python_unit.add_module("tokenize")
         self.python_unit.add_module('token')
-        self.python_unit.add_module('enum')       
+        self.python_unit.add_module('enum')
+        self.python_unit.add_module('warnings')
+        self.python_unit.add_module('numbers')
+        self.python_unit.add_module('pickle')  
+        self.python_unit.add_module('_compat_pickle')                          
         
         #register some basic modules
         from .bundler_modules import _ctypes
