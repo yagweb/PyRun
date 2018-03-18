@@ -5,6 +5,7 @@ import os
 import sys
 import platform
 import glob
+import pkg_resources
 
 def get_pyver():
     temp = platform.python_version().split('.')
@@ -47,6 +48,20 @@ class ModuleDescriptor(object):
                     continue
                 self.paths.append((path, dest))
         else:
+            self.paths.append((path, dest))
+            
+    def add_egg_info_files(self, files, module_name = None):
+        if module_name is None:
+            module_name = self.name
+        dist = pkg_resources.get_distribution(module_name)
+        if dist.location.endswith('.egg'):
+            folder = os.path.join(dist.location, 'EGG-INFO')
+        else:
+            folder = os.path.join(dist.location, dist.egg_name() + ".egg-info")
+        dist_folder = dist.egg_name() + ".egg-info"
+        for file in files:
+            path = os.path.join(folder, file)
+            dest = os.path.join(dist_folder, file)
             self.paths.append((path, dest))
     
     def add_dll_in_library_bin(self, name, dest = None):

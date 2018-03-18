@@ -56,11 +56,13 @@ wmain(int argc, wchar_t **argv)
 	);
 	PyRun_SimpleString("try:\n"
 		"    import os, sys\n"
+		"    import traceback\n"
 		"    module = os.path.splitext(os.path.basename(sys.argv[0]))[0]\n"
 		"    __import__(module)\n"
 		"except Exception as ex:\n"
 		"    print('>>>>>>>>')\n"
 		"    print(ex)\n"
+		"    traceback.print_exc()\n"
 		"    print('<<<<<<<<')\n"
 		"    print('Press any key to exit...')\n"
 		"    sys.stdin.read(1)\n");

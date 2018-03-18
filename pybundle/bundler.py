@@ -72,12 +72,18 @@ class Bundler(object):
         des = self.descriptors.get(name, None)
         return des
         
-    def bundle(self, name, is_compress = True, is_clear = True):
+    def bundle(self, name, is_compress = True, 
+               is_source = None, 
+               is_clear = False):
         unit = self.get_unit(name)
-        unit.bundle(is_compress = is_compress, 
+        unit.bundle(is_compress = is_compress,
+                    is_source = is_source, 
                     is_clear = is_clear)
         
-    def bundle_all(self, is_compress = True, is_clear = True):
+    def bundle_all(self, is_compress = True, 
+                   is_source = None, 
+                   is_clear = False):
         for unit in self.units.values():
             unit.bundle(is_compress = is_compress, 
+                        is_source = is_source, 
                         is_clear = is_clear)

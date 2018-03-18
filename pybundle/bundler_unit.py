@@ -139,9 +139,11 @@ class BundlerUnit(object):
         else:
             self.add_descriptor(des)
 
-    def bundle(self, is_compress = None, is_clear = None):
+    def bundle(self, is_compress = None, is_source = None, is_clear = None):
         if is_compress is not None:
             self.is_compress = is_compress
+        if is_source is not None:
+            self.is_source = is_source
         if is_clear is not None:
             self.is_clear = is_clear
             
@@ -261,7 +263,8 @@ class BundlerUnit(object):
         else:
             print('bundle %s failed.' % self.name)  
             
-    def compile_file(self, fullname, cdir, newname = None, ddir=None, optimize = -1, is_source = False):
+    def compile_file(self, fullname, cdir, newname = None, 
+                     ddir = None, optimize = -1, is_source = False):
         if not os.path.exists(cdir):
             os.mkdir(cdir)
         elif not os.path.isdir(cdir):
