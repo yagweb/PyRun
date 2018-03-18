@@ -1,11 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Tue Apr 25 11:25:16 2017
-
-bundle libcore at the last step
-
-@author: yagweb
-"""
 import os
 from pybundle import Bundler
 
@@ -19,44 +12,51 @@ def bundle_core(dirname):
     
 def bundle_socket(dirname):   
     bundler = Bundler(dirname)
-    libext = bundler.create_unit('socket', 'socket')
-    bundler.add_module_to_unit('socket', libext)
-    libext.bundle(is_compress = True, is_clear = True)
+    unit = bundler.create_unit('socket')
+    unit.add_dependency('socket')
+    unit.bundle(is_compress = True, is_clear = True)
     
     bundler.bundle('python', is_compress = True, is_clear = False)
     
 def bundle_sqlite3(dirname):   
     bundler = Bundler(dirname)
-    libext = bundler.create_unit('sqlite3', 'sqlite3')
-    bundler.add_module_to_unit('sqlite3', libext)
-    libext.bundle(is_compress = True, is_clear = True)
+    unit = bundler.create_unit('sqlite3')
+    unit.add_dependency('sqlite3')
+    unit.bundle(is_compress = True, is_clear = True)
     
 def bundle_ctypes(dirname):
     bundler = Bundler(dirname)
-    libext = bundler.create_unit('ctypes', 'ctypes')
-    bundler.add_module_to_unit('ctypes', libext)
-    libext.bundle(is_compress = True, is_clear = True) 
+    unit = bundler.create_unit('ctypes')
+    unit.add_dependency('ctypes')
+    unit.bundle(is_compress = True, is_clear = True) 
     
 def bundle_numpy(dirname):
     bundler = Bundler(dirname)
-    libext = bundler.create_unit('numpy', 'numpy')
-    bundler.add_module_to_unit('numpy', libext)
-#    libext.bundle(is_compress = True, is_clear = True)
-    libext.bundle(is_compress = False)
+    unit = bundler.create_unit('numpy')
+    unit.add_dependency('numpy')
+#    unit.bundle(is_compress = True, is_clear = True)
+    unit.bundle(is_compress = False)
 
 def bundle_PyQt5(dirname):
     bundler = Bundler(dirname)
-    libext = bundler.create_unit('PyQt5', 'PyQt5')
-    bundler.add_module_to_unit('PyQt5', libext)
-#    libext.bundle(is_compress = True, is_clear = True)
-    libext.bundle(is_compress = False)
+    unit = bundler.create_unit('PyQt5')
+    unit.add_dependency('PyQt5')
+#    unit.bundle(is_compress = True, is_clear = True)
+    unit.bundle(is_compress = False)
     
 def bundle_matplotlib():
     bundler = Bundler(dirname)
-    libext = bundler.create_unit('matplotlib', 'matplotlib')
-    bundler.add_module_to_unit('matplotlib', libext)
-#    libext.bundle(is_compress = True, is_clear = True)
-    libext.bundle(is_compress = False, is_clear = False)
+    unit = bundler.create_unit('matplotlib')
+    unit.add_dependency('matplotlib')
+#    unit.bundle(is_compress = True, is_clear = True)
+    unit.bundle(is_compress = False, is_clear = False)
+    
+def bundle_pandas():
+    bundler = Bundler(dirname)
+    unit = bundler.create_unit('pandas')
+    unit.add_dependency('pandas')
+#    unit.bundle(is_compress = True, is_clear = True)
+    unit.bundle(is_compress = False, is_clear = False)
     
 if __name__ == '__main__':
     dirname = '../bin/'
@@ -66,5 +66,6 @@ if __name__ == '__main__':
 #    bundle_ctypes(dirname)
 #    bundle_numpy(dirname)
 #    bundle_PyQt5(dirname)
-    bundle_matplotlib()
+#    bundle_matplotlib()
+    bundle_pandas()
     

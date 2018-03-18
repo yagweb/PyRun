@@ -46,7 +46,7 @@ class ModuleList(object):
         return True
     
 class BundlerUnit(object):
-    def __init__(self, name : str, modules : ModuleList, 
+    def __init__(self, name : str, bundler : 'Bundler', 
                  is_compress = True, 
                  is_source = False, 
                  is_clear = False, 
@@ -58,7 +58,8 @@ class BundlerUnit(object):
         self.dll_files = []
         self.subpyd_files = {} #name, fullpath
         self.copy_files = []
-        self.modules = modules
+        self.bundler = bundler
+        self.modules = bundler.modules
         
         self.initialize(is_compress = is_compress, 
                is_source = is_source, is_clear = is_clear, 
@@ -122,6 +123,21 @@ class BundlerUnit(object):
         if(path.endswith('__init__.py')):
             path = os.path.dirname(path) 
         self.add_path(path, ignore = ignore)
+            
+    def add_descriptor(self, des):
+        for name, ignore in des.modules:
+            self.add_module(name, ignore)
+        for dependency in des.dependencies:
+            self.add_dependency(dependency)
+        for path, dest in des.paths:
+            self.add_path(path, dest)
+        
+    def add_dependency(self, name):
+        des = self.bundler.try_get_descriptor(name)
+        if des is None:
+            self.add_module(name)
+        else:
+            self.add_descriptor(des)
 
     def bundle(self, is_compress = None, is_clear = None):
         if is_compress is not None:

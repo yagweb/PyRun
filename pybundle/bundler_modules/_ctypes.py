@@ -1,14 +1,12 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Sat Mar 17 09:12:49 2018
+from .module_descriptor import ModuleDescriptor
 
-@author: yagweb
-"""
+def get_descriptor():
+    return build(ModuleDescriptor('ctypes'))
 
-def get_method(pyver):
-    return 'ctypes', add_ctypes
-
-def add_ctypes(bundler, dependency):
-    bundler.add_module('ctypes')
-    bundler.add_module('_ctypes')
-    dependency.add_module('struct')
+def build(des):
+    des.add_module('ctypes')
+    des.add_module('_ctypes')
+    
+    des.add_dependency('struct')
+    return des

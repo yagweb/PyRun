@@ -4,14 +4,16 @@ Created on Sat Mar 17 23:18:07 2018
 
 @author: yagweb
 """
-import os
-import sys
+from .module_descriptor import ModuleDescriptor
 
-def get_method(pyver):
-    return 'sqlite3', add_sqlite3
- 
-def add_sqlite3(bundler, dependency):
-    bundler.add_module('sqlite3', ignore = ['test'])
-    bundler.add_module('_sqlite3')
-    bundler.add_path(os.path.join(sys.prefix, 'Library/bin/sqlite3.dll'))
-    dependency.add_module('datetime')
+def get_descriptor():
+    return build(ModuleDescriptor('socket'))
+
+def build(des):
+    des.add_module('sqlite3', ignore = ['test'])
+    des.add_module('_sqlite3')
+    des.add_dll_in_library_bin('sqlite3')
+    
+    #
+    des.add_dependency('datetime')
+    return des

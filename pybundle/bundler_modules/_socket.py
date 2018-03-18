@@ -4,15 +4,18 @@ Created on Sat Mar 17 10:19:26 2018
 
 @author: yagweb
 """
+from .module_descriptor import ModuleDescriptor
 
-def get_method(pyver):
-    return 'socket', add_socket
- 
-def add_socket(bundler, dependency):
-    bundler.add_module('socket')
-    bundler.add_module('_socket')
-    bundler.add_module('select') #pyd
-    dependency.add_module('selectors')
-    dependency.add_module('enum')
-    dependency.add_module('tokenize')
-    dependency.add_module('token')
+def get_descriptor():
+    return build(ModuleDescriptor('socket'))
+
+def build(des):
+    des.add_module('socket')
+    des.add_module('_socket')
+    des.add_module('select') #pyd
+    #
+    des.add_dependency('selectors')
+    des.add_dependency('enum')
+    des.add_dependency('tokenize')
+    des.add_dependency('token')
+    return des
