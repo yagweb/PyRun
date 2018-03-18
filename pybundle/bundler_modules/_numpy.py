@@ -22,7 +22,7 @@ def add_numpy_py36(bundler, dependency):
                                  ])
     #Windows Anaconda
     mkldir = os.path.join(sys.prefix, 'Library/bin')
-    for mkl in ('libiomp5md', 'mkl_avx2', 'mkl_core', 'mkl_intel_thread', 'mkl_rt'):
+    for mkl in ('libiomp5md', 'mkl_core', 'mkl_intel_thread'):
         bundler.add_path(mkldir + os.path.sep + mkl+'.dll')
     
     #

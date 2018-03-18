@@ -12,7 +12,7 @@ import py_compile
 import glob
 
 from .file_utils import file_util, check_file_timeout, \
-    copy_file_if_newer
+    copy_file_if_newer, path_join_and_create
 
 python_source_lib = os.path.abspath(os.path.dirname(os.__file__))
 
@@ -98,7 +98,7 @@ class BundlerUnit(object):
                 mod_name = file_name[:len(file_name) - 4]
                 self.subpyd_files[mod_name] = path
             elif path.endswith(file_util.dll_ext):
-                self.dll_files.append(path)
+                self.dll_files.append((path, dest))
             else:
                 self.compile_files.append((path, dest, ignore))                
         else:
@@ -176,9 +176,10 @@ class BundlerUnit(object):
         dirname = self.dirname
         
         #dll 文件处理
-        for file in self.dll_files:
+        for file, dest in self.dll_files:
             file_name = os.path.basename(file)
-            copy_file_if_newer(file, os.path.join(self.dll_dir, file_name))
+            dll_dir = path_join_and_create(self.dll_dir, dest)
+            copy_file_if_newer(file, os.path.join(dll_dir, file_name))
         
         for name, file in self.subpyd_files.items():
             copy_file_if_newer(file, os.path.join(self.pyd_dir, name + '.pyd'))

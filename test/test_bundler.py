@@ -60,8 +60,8 @@ if __name__ == '__main__':
     dirname = '../bin/'
 #    bundle_core(dirname)
 #    bundle_socket(dirname)
-#    bundle_sqlite3(dirname)
+    bundle_sqlite3(dirname)
 #    bundle_ctypes(dirname)
 #    bundle_numpy(dirname)
-    bundle_PyQt5(dirname)
+#    bundle_PyQt5(dirname)
     

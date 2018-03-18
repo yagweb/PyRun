@@ -31,6 +31,17 @@ def remove_file_if_out_of_date(file, references):
         print("file '%s' is out of date" % file)
         os.remove(file)
 
+def path_join_and_create(root, sub):
+    if sub is None or sub == '':
+        return root
+    subs = os.path.split(sub)
+    cur = root
+    for sub in subs:
+        cur = os.path.join(cur, sub)
+        if not os.path.exists(cur):
+            os.mkdir(cur)
+    return cur
+
 class FileUtil(object):
     def  __init__(self):
         import platform
