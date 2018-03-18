@@ -51,17 +51,20 @@ def bundle_PyQt5(dirname):
 #    libext.bundle(is_compress = True, is_clear = True)
     libext.bundle(is_compress = False)
     
-def find_python_dll():
-    #for windows
-    import subprocess
-    subprocess.check_call("where python36.dll")
+def bundle_matplotlib():
+    bundler = Bundler(dirname)
+    libext = bundler.create_unit('matplotlib', 'matplotlib')
+    bundler.add_module_to_unit('matplotlib', libext)
+#    libext.bundle(is_compress = True, is_clear = True)
+    libext.bundle(is_compress = False, is_clear = False)
     
 if __name__ == '__main__':
     dirname = '../bin/'
 #    bundle_core(dirname)
 #    bundle_socket(dirname)
-    bundle_sqlite3(dirname)
+#    bundle_sqlite3(dirname)
 #    bundle_ctypes(dirname)
 #    bundle_numpy(dirname)
 #    bundle_PyQt5(dirname)
+    bundle_matplotlib()
     

@@ -206,6 +206,15 @@ class BundlerUnit(object):
                 print("file '%s' not exist" % file)
                 return success
             if os.path.isdir(_file):
+                #should skip if folder is module and exist?
+                temp = os.path.join(self.root, os.path.basename(_file))
+                if not self.is_compress and os.path.exists(temp):                    
+                    if self.is_clear:
+                        shutil.rmtree(temp)
+                        os.mkdir(temp)
+                    else:
+                        print('skipping %s' % _file)
+                        return True
                 success = self.compile_dir(_file, cdir, newname, ignore = ignore, 
                                       maxlevels=10, ddir=None, 
                                       optimize=-1, is_source = is_source)
@@ -221,7 +230,7 @@ class BundlerUnit(object):
             else :
                 _cdir = cdir
                 newname = None
-            print("compile file '%s'" % file)
+#            print("compile file '%s'" % file)
             if "*" in file or "?" in file or "[" in file:
                 _files = glob.glob(file)
                 for file in _files:
@@ -271,6 +280,9 @@ class BundlerUnit(object):
             return True
         try:
             cfile = os.path.join(cdir, name) + ('c' if __debug__ else 'o')
+            if is_source_remained(fullname, cfile):
+                print('skipping py file {0}'.format(fullname))
+                return True
             print('compile file {0} to {1}'.format(fullname, cfile))
             py_compile.compile(fullname, cfile, dfile, True,
                                 optimize=optimize)
@@ -356,3 +368,9 @@ def delete_from_zip(zip_path, delete_dirs, delete_files=[]):
     zin.close()     
     #override, if the file existed
     shutil.move(new_zipfile, zip_path) 
+
+def is_source_remained(source, dest):
+    if not os.path.exists(dest) or \
+        os.stat(source).st_mtime > os.stat(dest).st_mtime:
+            return False
+    return True

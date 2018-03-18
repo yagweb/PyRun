@@ -54,6 +54,8 @@ class Bundler(object):
         self.register_module(_numpy)
         from .bundler_modules import _PyQt5 
         self.register_module(_PyQt5)
+        from .bundler_modules import _matplotlib
+        self.register_module(_matplotlib)
         
     def copy_python_dll(self):
         if platform.system() == "Windows":
