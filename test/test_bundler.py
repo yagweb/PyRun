@@ -58,6 +58,13 @@ def bundle_pandas():
 #    unit.bundle(is_compress = True, is_clear = True)
     unit.bundle(is_compress = False, is_clear = False)
     
+def bundle_scipy():
+    bundler = Bundler(dirname)
+    unit = bundler.create_unit('scipy')
+    unit.add_dependency('scipy')
+#    unit.bundle(is_compress = True, is_clear = True)
+    unit.bundle(is_compress = False, is_clear = False)
+    
 if __name__ == '__main__':
     dirname = '../bin/'
 #    bundle_core(dirname)
@@ -67,5 +74,6 @@ if __name__ == '__main__':
 #    bundle_numpy(dirname)
 #    bundle_PyQt5(dirname)
 #    bundle_matplotlib()
-    bundle_pandas()
+#    bundle_pandas()
+    bundle_scipy()
     

@@ -1,15 +1,14 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Sat Mar 17 10:19:26 2018
+'''
+hand written descriptor for the socket module
+'''
+from .descriptor import ModuleDescriptor
 
-@author: yagweb
-"""
-from .module_descriptor import ModuleDescriptor
+def get_descriptors():
+    return build_socket(), 
 
-def get_descriptor():
-    return build(ModuleDescriptor('socket'))
-
-def build(des):
+def build_socket(des = None):
+    if des is None:
+        des = ModuleDescriptor('socket')
     des.add_module('socket')
     des.add_module('_socket')
     des.add_module('select') #pyd

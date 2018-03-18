@@ -1,9 +1,6 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Sun Mar 18 13:45:09 2018
-
-@author: yagweb
-"""
+'''
+descriptor class
+'''
 import os
 import sys
 import platform

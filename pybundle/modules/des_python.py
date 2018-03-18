@@ -1,15 +1,15 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Mar 16 23:54:26 2018
+'''
+hand written descriptor for the CPython Runtime
+Minimum files
+'''
+from .descriptor import ModuleDescriptor
 
-@author: yagweb
-"""
-from .module_descriptor import ModuleDescriptor
+def get_descriptors():
+    return build_python(), 
 
-def get_descriptor():
-    return build(ModuleDescriptor('python'))
-
-def build(des):
+def build_python(des = None):
+    if des is None:
+        des = ModuleDescriptor('python')
     des.add_module('encodings')
     des.add_module('collections')
     des.add_module('traceback')

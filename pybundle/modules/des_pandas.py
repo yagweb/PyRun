@@ -1,10 +1,14 @@
+'''
+hand written descriptor for the pandas module
+'''
+from .descriptor import ModuleDescriptor
 
-from .module_descriptor import ModuleDescriptor
+def get_descriptors():
+    return build_pandas(), 
 
-def get_descriptor():
-    return build(ModuleDescriptor('pandas'))
-
-def build(des):
+def build_pandas(des = None):
+    if des is None:
+        des = ModuleDescriptor('pandas')
     des.add_module('pandas')
     
     des.add_dependency('pytz')

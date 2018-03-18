@@ -45,10 +45,22 @@ def test_pandas():
     df = pd.DataFrame([[1, 2], [2, 3]])
     print(df)
 
+def test_scipy():
+    import numpy as np
+    from scipy import interpolate
+    
+    x = np.arange(0, 10)
+    y = np.exp(-x/3.0)
+    f = interpolate.interp1d(x, y)
+    xnew = np.arange(0, 9, 0.1)
+    ynew = f(xnew)
+    print(ynew)
+
 ###############3
 #test_socket()
 #test_sqlite3()  
 #test_numpy()
 #test_PyQt5()
 #test_matplotlib()
-test_pandas()
+#test_pandas()
+test_scipy()

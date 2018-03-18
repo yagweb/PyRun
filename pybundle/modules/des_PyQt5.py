@@ -1,10 +1,14 @@
-# -*- coding: utf-8 -*-
-from .module_descriptor import ModuleDescriptor
+'''
+hand written descriptor for the PyQt5 module
+'''
+from .descriptor import ModuleDescriptor
 
-def get_descriptor():
-    return build(ModuleDescriptor('PyQt5'))
+def get_descriptors():
+    return build_PyQt5(), 
 
-def build(des):
+def build_PyQt5(des = None):
+    if des is None:
+        des = ModuleDescriptor('PyQt5')
     des.add_module('PyQt5', ignore = ['port_v2'])
     
     des.add_dlls_in_library_bin(['Qt5Core', 'Qt5Gui', 'Qt5Widgets'])

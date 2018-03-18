@@ -1,11 +1,15 @@
-# -*- coding: utf-8 -*-
+'''
+hand written descriptor for the hook module
+'''
 import os
-from .module_descriptor import ModuleDescriptor
+from .descriptor import ModuleDescriptor
 
-def get_descriptor():
-    return build(ModuleDescriptor('hook'))
+def get_descriptors():
+    return build_hook(), 
 
-def build(des):
+def build_hook(des = None):
+    if des is None:
+        des = ModuleDescriptor('hook')
     des.add_path(os.path.join(__file__, "../../hook.py"))
     des.add_module("imp")
     des.add_module("importlib")

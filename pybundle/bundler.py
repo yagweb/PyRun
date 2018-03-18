@@ -28,31 +28,14 @@ class Bundler(object):
         self.units = {}                     
         
         #register some basic modules
-        from .bundler_modules import _platform
-        self.register(_platform.get_descriptor())
-        from .bundler_modules import _ctypes
-        self.register(_ctypes.get_descriptor())
-        from .bundler_modules import _socket
-        self.register(_socket.get_descriptor())
-        from .bundler_modules import _sqlite3
-        self.register(_sqlite3.get_descriptor())
-        from .bundler_modules import _numpy 
-        self.register(_numpy.get_descriptor())
-        from .bundler_modules import _PyQt5 
-        self.register(_PyQt5.get_descriptor())
-        from .bundler_modules import _matplotlib
-        self.register(_matplotlib.get_descriptor())
-        from .bundler_modules import _pandas
-        self.register(_pandas.get_descriptor())
+        from .modules import descriptors
+        for des in descriptors:
+            self.register(des)
         
         # core bundler, unique
         self.python_unit = self.create_unit('python')
-        from .bundler_modules._python import get_descriptor
-        des = get_descriptor()
-        self.python_unit.add_descriptor(des)
-        from .bundler_modules._hook import get_descriptor
-        des = get_descriptor()
-        self.python_unit.add_descriptor(des)
+        self.python_unit.add_dependency('python')
+        self.python_unit.add_dependency('hook')
         
     def copy_python_dll(self):
         if platform.system() == "Windows":

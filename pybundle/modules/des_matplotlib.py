@@ -1,15 +1,14 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Sun Mar 18 00:09:41 2018
+'''
+hand written descriptor for the matplotlib module
+'''
+from .descriptor import ModuleDescriptor
 
-@author: yagweb
-"""
-from .module_descriptor import ModuleDescriptor
+def get_descriptors():
+    return build_matplotlib(), 
 
-def get_descriptor():
-    return build(ModuleDescriptor('matplotlib'))
-
-def build(des):
+def build_matplotlib(des = None):
+    if des is None:
+        des = ModuleDescriptor('matplotlib')
     des.add_module('matplotlib')
     
     des.add_dependency('six')

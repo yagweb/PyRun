@@ -1,20 +1,18 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Mar 16 23:46:44 2018
+'''
+hand written descriptor for the numy module
+'''
+from .descriptor import ModuleDescriptor
 
-@author: yagweb
-"""
-from .module_descriptor import ModuleDescriptor
+def get_descriptors():
+    return build_numpy(), 
 
-def get_descriptor():
-    return build(ModuleDescriptor('numpy'))
-
-def build(des):
+def build_numpy(des = None):
+    if des is None:
+        des = ModuleDescriptor('numpy')
     des.add_module('numpy', ignore = ['doc',
                                  'f2py', 
 #                                 'tests'
                                  ])
-    #Windows Anaconda
     des.add_dlls_in_library_bin(('libiomp5md', 'mkl_core', 'mkl_intel_thread'))
     
     # 
