@@ -4,6 +4,7 @@ import zipfile
 import shutil
 import py_compile
 import glob
+from _frozen_importlib_external import _NamespacePath
 
 from .file_utils import file_util, check_file_timeout, \
     copy_file_if_newer, path_join_and_create
@@ -15,6 +16,7 @@ class BundlerUnit(object):
                  is_compress = True, 
                  is_source = False, 
                  is_clear = False, 
+                 file_dir = None,
                  lib_dir = None, 
                  dll_dir = None,
                  pyd_dir = None):
@@ -29,20 +31,23 @@ class BundlerUnit(object):
         
         self.initialize(is_compress = is_compress, 
                is_source = is_source, is_clear = is_clear, 
+               file_dir = file_dir,
                lib_dir = lib_dir, 
                dll_dir = dll_dir,
                pyd_dir = pyd_dir)
             
     def initialize(self, is_compress = False, 
                is_source = False, is_clear = False, 
+               file_dir = None,
                lib_dir = None, 
                dll_dir = None,
                pyd_dir = None):
-        self.dirname = lib_dir
+        self.file_dir = file_dir
+        self.package_dir = file_dir if lib_dir is None else lib_dir
         self.is_source = is_source
         self.is_clear = is_clear
-        self.dll_dir = lib_dir if dll_dir is None else dll_dir
-        self.pyd_dir = lib_dir if pyd_dir is None else pyd_dir
+        self.dll_dir = file_dir if dll_dir is None else dll_dir
+        self.pyd_dir = file_dir if pyd_dir is None else pyd_dir
         self.is_compress = is_compress
      
     @property
@@ -53,7 +58,10 @@ class BundlerUnit(object):
             zip_file = None
         return zip_file
             
-    def add_path(self, path, dest = None, ignore = ['__pycache__']): 
+    def add_path(self, path, dest = None, ignore = ['__pycache__'], is_compile = None): 
+        '''
+        for .py file, the dest path is relative to self.package_dir
+        '''
         if not os.path.exists(path):
             raise Exception("file %s not exists" % path)
         if os.path.isfile(path):
@@ -67,9 +75,17 @@ class BundlerUnit(object):
             elif path.endswith(file_util.dll_ext):
                 self.dll_files.append((path, dest))
             else:
-                self.compile_files.append((path, dest, ignore))                
+                if is_compile is None:
+                    is_compile = True if path.endswith('.py') else False
+                if is_compile:
+                    self.compile_files.append((path, dest, ignore))    
+                else:
+                    self.copy_files.append((path, dest))
         else:
-            self.compile_files.append((path, dest, ignore))
+            if is_compile:
+                self.compile_files.append((path, dest, ignore))   
+            else:
+                self.copy_files.append((path, dest))
                         
     def add_module(self, name, ignore = []):
         if '__pycache__' not in ignore:
@@ -87,16 +103,27 @@ class BundlerUnit(object):
             temp = {}
             exec("from {0} import {1}".format(package_name, module_name), temp)
             module = temp[module_name]
-        path = module.__file__
-        if(path.endswith('__init__.py')):
-            path = os.path.dirname(path)
+        if hasattr(module, '__path__'):  # package
+            path = module.__path__
+            if isinstance(path, _NamespacePath):
+                print(">>> It's a namespace package")
+                path = path._path
+            if len(path) == 0:
+                self.add_path(module.__file__, ignore = ignore, is_compile = True)
+                return
+            elif len(path) > 1:
+                raise Exception("package '{0}' has multiple path".format(name))
+            path = path[0]
             #egg file or zipfile
             pa = os.path.dirname(path)
             if os.path.isfile(pa):
                 print(">>> It's a zip file or egg file")
-                self.add_path(pa, ignore = ignore)
+                self.add_path(pa, ignore = ignore, is_compile = True)
                 return
-        self.add_path(path, ignore = ignore)
+            else:
+                self.add_path(path, is_compile = True)
+        else:
+            self.add_path(module.__file__, ignore = ignore, is_compile = True)
             
     def add_descriptor(self, des):
         owner = self.descriptor_cache.add_module(des.name, self.name)
@@ -107,8 +134,8 @@ class BundlerUnit(object):
             self.add_module(name, ignore)
         for dependency in des.dependencies:
             self.add_dependency(dependency)
-        for path, dest in des.paths:
-            self.add_path(path, dest)
+        for path, dest, is_compile in des.paths:
+            self.add_path(path, dest, is_compile = is_compile)
         
     def add_dependency(self, name):
         des = self.bundler.try_get_descriptor(name)
@@ -118,6 +145,7 @@ class BundlerUnit(object):
             self.add_descriptor(des)
 
     def bundle(self, is_compress = None, is_source = None, is_clear = None):
+        print("bundle {0} start...".format(self.name))
         if is_compress is not None:
             self.is_compress = is_compress
         if is_source is not None:
@@ -126,7 +154,7 @@ class BundlerUnit(object):
             self.is_clear = is_clear
             
         if self.is_compress:
-            dest_file = os.path.join(self.dirname, self.zip_file)
+            dest_file = os.path.join(self.package_dir, self.zip_file)
             if self.is_clear and os.path.exists(dest_file):
                 os.remove(dest_file)
             elif not check_file_timeout(dest_file, 
@@ -144,8 +172,8 @@ class BundlerUnit(object):
         
     def __init_dir(self): 
         #folder init
-        if not os.path.exists(self.dirname):
-            os.mkdir(self.dirname)
+        if not os.path.exists(self.package_dir):
+            os.mkdir(self.package_dir)
         if not os.path.exists(self.dll_dir):
             os.mkdir(self.dll_dir)
         if not os.path.exists(self.pyd_dir):
@@ -154,23 +182,21 @@ class BundlerUnit(object):
         if self.is_compress: # create a temp folder
             self.root = os.path.abspath('temp%d' % time.time())
         else:
-            self.root = self.dirname
+            self.root = self.package_dir
         if not os.path.exists(self.root) or not os.path.isdir(self.root):
             os.mkdir(self.root)
             
     def compress(self):
         if not self.is_compress:
             return
-        zip_file = os.path.join(self.dirname, self.zip_file)
+        zip_file = os.path.join(self.package_dir, self.zip_file)
         print('bundle start %s' % zip_file) 
         compile_zip(zip_file, self.root, [])      
         print('bundle end') 
         print('remove the temp folder')
         shutil.rmtree(self.root)
                 
-    def copy(self):
-        dirname = self.dirname
-        
+    def copy(self):        
         for file, dest in self.dll_files:
             file_name = os.path.basename(file)
             dll_dir = path_join_and_create(self.dll_dir, dest)
@@ -179,6 +205,7 @@ class BundlerUnit(object):
         for name, file in self.subpyd_files.items():
             copy_file_if_newer(file, os.path.join(self.pyd_dir, name + '.pyd'))
         
+        dirname = self.file_dir
         for file, dest in self.copy_files:
             if dest:
                 destfile = os.path.join(dirname, dest)

@@ -3,7 +3,8 @@ import sys
 import platform
 from .cache import ItemCache, ModuleCache
 from .bundler_unit import BundlerUnit
-from .file_utils import copy_file_if_newer
+from .file_utils import copy_file_if_newer, mkdir
+from .modules import ModuleDescriptor
 
 def get_pyver():
     temp = platform.python_version().split('.')
@@ -23,10 +24,9 @@ class Bundler(object):
         
         self.units = {}                     
         
-        #register some basic modules
+        # register some basic modules
         from .modules import descriptors
-        for des in descriptors:
-            self.register(des)
+        self.register(descriptors)
         
         # core bundler, unique
         self.python_unit = self.create_unit('python')
@@ -34,24 +34,30 @@ class Bundler(object):
         self.python_unit.add_dependency('hook')
         
     def copy_python_dll(self):
+        mkdir(self.dirname)
         if platform.system() == "Windows":
-            name = 'python'+self.pyver+'.dll'
+            name = 'python' + self.pyver + '.dll'
             source = os.path.join(sys.prefix, name)
             dest = os.path.join(self.dirname, name)
         else:
-            name = 'python'+self.pyver+'.so'
+            name = 'python' + self.pyver + '.so'
             source = os.path.join(sys.prefix, name)
             dest = os.path.join(self.dirname, name)
         copy_file_if_newer(source, dest)
         
-    def register(self, descriptor):
-        self.descriptors[descriptor.name] = descriptor
+    def register(self, descriptors):
+        if isinstance(descriptors, ModuleDescriptor):
+            self.descriptors[descriptors.name] = descriptors
+            return
+        for des in descriptors:
+            self.descriptors[des.name] = des
             
     def create_unit(self, name):
         if name in self.units:
             raise Exception('bundler unit %s has exists' % name)
         
         unit = BundlerUnit(name, self,
+                              file_dir = self.dirname,
                               lib_dir = self.lib_dir, 
                               dll_dir = self.dll_dir,
                               pyd_dir = self.pyd_dir)
@@ -79,6 +85,7 @@ class Bundler(object):
     def bundle_all(self, is_compress = True, 
                    is_source = None, 
                    is_clear = False):
+        self.copy_python_dll()
         for unit in self.units.values():
             unit.bundle(is_compress = is_compress, 
                         is_source = is_source, 

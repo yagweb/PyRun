@@ -37,6 +37,7 @@ def build_matplotlib(des = None):
     des.add_dependency('decimal')
     
     des.add_dll_in_library_bin('mkl_avx2')
+    des.add_dll_in_library_bin('mkl_def')
     return des
 
 def build_decimal(des = None):

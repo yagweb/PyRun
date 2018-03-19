@@ -11,7 +11,7 @@ def build_numpy(des = None):
         des = ModuleDescriptor('numpy')
     des.add_module('numpy', ignore = ['doc',
                                  'f2py', 
-#                                 'tests'
+                                 'tests'
                                  ])
     des.add_dlls_in_library_bin(('libiomp5md', 'mkl_core', 'mkl_intel_thread'))
     

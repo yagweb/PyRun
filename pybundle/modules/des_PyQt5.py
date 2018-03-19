@@ -13,6 +13,12 @@ def build_PyQt5(des = None):
     
     des.add_dlls_in_library_bin(['Qt5Core', 'Qt5Gui', 'Qt5Widgets'])
 #    des.add_path("Qt5*", is_glob = True)
+    des.add_dlls_in_library_bin(['api-ms-win-crt-multibyte-l1-1-0', 
+                                 'api-ms-win-crt-utility-l1-1-0'])
+    des.add_dlls_in_library_bin(['Enginio', 'freetype', 'icudt58'])
+    des.add_dlls_in_library_bin(['icuin58', 'icuuc58', 'libifcoremd'])
+    des.add_dlls_in_library_bin(['libiomp5md', 'libjpeg', 'libmmd'])
+    des.add_dlls_in_library_bin(['libpng16', 'msvcp140', 'zlib'])
     
     # fixed: could not find or load the Qt platform plugin "windows"
     # need to copy with folder and put as the same level with the exe
@@ -21,4 +27,5 @@ def build_PyQt5(des = None):
         
     #
     des.add_dependency('sip')
+    des.add_dependency('pygments')
     return des

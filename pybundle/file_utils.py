@@ -42,6 +42,14 @@ def path_join_and_create(root, sub):
             os.mkdir(cur)
     return cur
 
+def mkdir(dirname):    
+    tmp = os.path.split(dirname)
+    cur = ''
+    for sub in tmp:
+        cur = os.path.join(cur, sub)            
+        if not os.path.exists(cur):
+            os.mkdir(cur)
+
 class FileUtil(object):
     def  __init__(self):
         import platform

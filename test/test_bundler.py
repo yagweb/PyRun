@@ -12,7 +12,7 @@ def bundle_python(dirname):
 def bundle_script(dirname, script_path): 
     bundler = Bundler(dirname)
     unit = bundler.create_unit('main')
-    unit.add_path(script_path, dest = "../PyRun.py")
+    unit.add_path(script_path, dest = "PyRun.py", is_compile = False)
     bundler.bundle('main', is_compress = False, is_source = True)
     
 def bundle_package(dirname, package_name, main_script = None):
@@ -29,7 +29,7 @@ def bundle_package(dirname, package_name, main_script = None):
     
 if __name__ == '__main__':
     dirname = '../bin/'
-#    print_left_dependencies('matplotlib')
+#    print_left_dependencies('PyQt5')
 #    bundle_python(dirname)
 #    bundle_script(dirname, "main/test_python.py")
 #    bundle_package(dirname, 'setuptools')
@@ -37,9 +37,9 @@ if __name__ == '__main__':
 #    bundle_package(dirname, 'sqlite3')
 #    bundle_package(dirname, 'ctypes')
 #    bundle_package(dirname, 'numpy')
-#    bundle_package(dirname, 'PyQt5')
+    bundle_package(dirname, 'PyQt5')
 #    bundle_package(dirname, 'matplotlib')
 #    bundle_package(dirname, 'pandas')
 #    bundle_package(dirname, 'scipy')
-    bundle_package(dirname, 'traitsui')
+#    bundle_package(dirname, 'traitsui')
     

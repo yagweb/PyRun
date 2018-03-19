@@ -1,5 +1,7 @@
 '''
 descriptor class
+on Windows, we can use dumpbin /DEPENDENTS to find the dependent dlls,
+use where to get the path of each dll
 '''
 import os
 import sys
@@ -38,7 +40,7 @@ class ModuleDescriptor(object):
         self.dependencies.extend(names)
         
     def add_path(self, path, dest = None, 
-                 is_relative = False, is_glob = False):
+                 is_relative = False, is_glob = False, is_compile = None):
         if is_relative:
             path = os.path.join(sys.prefix, path)
         if is_glob:
@@ -46,9 +48,9 @@ class ModuleDescriptor(object):
             for path in paths:
                 if '~' in path:
                     continue
-                self.paths.append((path, dest))
+                self.paths.append((path, dest, is_compile))
         else:
-            self.paths.append((path, dest))
+            self.paths.append((path, dest, is_compile))
             
     def add_egg_info_files(self, files, module_name = None):
         if module_name is None:
@@ -62,17 +64,17 @@ class ModuleDescriptor(object):
         for file in files:
             path = os.path.join(folder, file)
             dest = os.path.join(dist_folder, file)
-            self.paths.append((path, dest))
+            self.paths.append((path, dest, True))
             
     def add_dll_in_DLLs(self, name, dest = None):
         path = os.path.join(sys.prefix, 'DLLs/{0}{1}'.format(name, self.dll_ext))
-        self.paths.append((path, dest))
+        self.paths.append((path, dest, None))
     
     def add_dll_in_library_bin(self, name, dest = None):
         path = os.path.join(sys.prefix, 'Library/bin/{0}{1}'.format(name, self.dll_ext))
-        self.paths.append((path, dest))
+        self.paths.append((path, dest, None))
     
     def add_dlls_in_library_bin(self, names, dest = None):
         for name in names:
             path = os.path.join(sys.prefix, 'Library/bin/{0}{1}'.format(name, self.dll_ext))
-            self.paths.append((path, dest))
+            self.paths.append((path, dest, None))

@@ -46,9 +46,8 @@ wmain(int argc, wchar_t **argv)
 	pos = libpath;
 	pos = wcs_append(pos, path);
 	pos = wcs_append(pos, L"/../packages/python.zip;");
-	//pos = wcs_append(pos, L"D:/git/PyRun/pybundle;"); //debug hook
 	//printf("%ls", libpath);
-	Py_SetPath(libpath); // absolute path of libcore.zip is need when debug
+	Py_SetPath(libpath); // Cannot be removed
 	Py_Initialize();
 	PySys_SetArgv(argc, argv); //Set sys.argv
 	PyRun_SimpleString("import hook\n"
