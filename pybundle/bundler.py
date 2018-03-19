@@ -1,13 +1,8 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Sat Mar 17 00:03:50 2018
-
-@author: yagweb
-"""
 import os
 import sys
 import platform
-from .bundler_unit import ModuleList, BundlerUnit
+from .cache import ItemCache, ModuleCache
+from .bundler_unit import BundlerUnit
 from .file_utils import copy_file_if_newer
 
 def get_pyver():
@@ -23,7 +18,8 @@ class Bundler(object):
         self.dll_dir = os.path.join(dirname, "DLLs")
         self.descriptors = {}
         self.pyver = get_pyver()
-        self.modules = ModuleList()
+        self.descriptor_cache = ItemCache()
+        self.module_cache = ModuleCache()
         
         self.units = {}                     
         
@@ -87,3 +83,47 @@ class Bundler(object):
             unit.bundle(is_compress = is_compress, 
                         is_source = is_source, 
                         is_clear = is_clear)
+
+    def get_package_dependency(self, name):
+        '''
+        For debug usage
+        It cannot be used for big package, such as numpy
+        egg file is not supported.
+        '''
+        from modulefinder import ModuleFinder
+        finder = ModuleFinder()
+        mod = __import__(name)
+        finder.run_script(mod.__file__)    
+        package_names = set()
+        for name in finder.modules:
+            package_name = name.split('.')[0]
+            if package_name not in self.module_cache.modules:
+                package_names.add(package_name)
+        return package_names
+
+def print_left_dependencies(package_name):
+    '''
+    a function to help find module dependencies for its descriptor definition.
+    Usage:
+        Define an empty descriptor
+        then call this function, to obtain all the dependencies
+        paste all the statement under the descriptor function.
+    '''
+    bundler = Bundler('')
+    unit = bundler.create_unit(package_name)
+    unit.add_dependency(package_name)
+    buildins = []
+    dependencies = []
+    for mod in bundler.get_package_dependency(package_name):
+        try:
+            __import__(mod).__file__
+            dependencies.append(mod)
+        except:
+            buildins.append(mod)
+    
+    print('buildins: ')
+    print(",".join(["'{0}'".format(mod) for mod in buildins]))
+    print("--------")
+    print('dummy_threading left dependencies, %d:' % len(dependencies))
+    for mod in dependencies:
+        print("    des.add_dependency('{0}')".format(mod))

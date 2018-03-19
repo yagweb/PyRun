@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 import os
-from pybundle import Bundler
+from pybundle import Bundler, print_left_dependencies
 
 def bundle_python(dirname):    
     bundler = Bundler(dirname)
     bundler.copy_python_dll()
-    bundler.bundle('python', is_compress = True)
+    is_clear = True
+    is_clear = False
+    bundler.bundle('python', is_compress = True, is_clear = is_clear)
     
 def bundle_script(dirname, script_path): 
     bundler = Bundler(dirname)
@@ -27,8 +29,10 @@ def bundle_package(dirname, package_name, main_script = None):
     
 if __name__ == '__main__':
     dirname = '../bin/'
+#    print_left_dependencies('matplotlib')
 #    bundle_python(dirname)
 #    bundle_script(dirname, "main/test_python.py")
+#    bundle_package(dirname, 'setuptools')
 #    bundle_package(dirname, 'socket')
 #    bundle_package(dirname, 'sqlite3')
 #    bundle_package(dirname, 'ctypes')

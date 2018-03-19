@@ -36,7 +36,7 @@ def register_packages(root):
     sys.path.append(packages)
     files = get_files(packages)
     for file_name, path in files:
-        if file_name.endswith(".zip"):
+        if file_name.endswith(".zip") or file_name.endswith(".egg"):
             sys.path.append(os.path.abspath(path))            
         
 def register():

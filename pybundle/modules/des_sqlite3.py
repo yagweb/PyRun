@@ -11,7 +11,7 @@ def build_sqlite3(des = None):
         des = ModuleDescriptor('sqlite3')
     des.add_module('sqlite3', ignore = ['test'])
     des.add_module('_sqlite3')
-    des.add_dll_in_library_bin('sqlite3')
+    des.add_dll_in_DLLs('sqlite3')
     
     #
     des.add_dependency('datetime')

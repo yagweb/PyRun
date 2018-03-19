@@ -63,6 +63,10 @@ class ModuleDescriptor(object):
             path = os.path.join(folder, file)
             dest = os.path.join(dist_folder, file)
             self.paths.append((path, dest))
+            
+    def add_dll_in_DLLs(self, name, dest = None):
+        path = os.path.join(sys.prefix, 'DLLs/{0}{1}'.format(name, self.dll_ext))
+        self.paths.append((path, dest))
     
     def add_dll_in_library_bin(self, name, dest = None):
         path = os.path.join(sys.prefix, 'Library/bin/{0}{1}'.format(name, self.dll_ext))

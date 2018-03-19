@@ -1,10 +1,4 @@
-# -*- coding: utf-8 -*-
-"""
-@author: YangWenguang
-Issues contact with: hbtmdxywg@126.com
-"""
 import os
-import sys
 import time
 import zipfile
 import shutil
@@ -15,35 +9,6 @@ from .file_utils import file_util, check_file_timeout, \
     copy_file_if_newer, path_join_and_create
 
 python_source_lib = os.path.abspath(os.path.dirname(os.__file__))
-
-class ModuleList(object):
-    '''
-    shared by multiple Bundlers
-    '''
-    def __init__(self):
-        self.modules = []  #must use fullname, modules in the dictionary will be skipped
-        # modules in the python dll, has not __file__ attr
-        self.modules.append('itertools')
-        self.modules.append('sys')
-        self.modules.append('builtins') 
-        self.modules.append('time') 
-        
-    def skip_module(self, name):
-        if name in self.modules:
-            return
-        self.modules.append(name)
-        
-    def skip_modules(self, names):        
-        for name in names:
-            if name in self.modules:
-                continue
-            self.modules.append(name)    
-        
-    def add_module(self, name):
-        if name in self.modules:
-            return False
-        self.modules.append(name) 
-        return True
     
 class BundlerUnit(object):
     def __init__(self, name : str, bundler : 'Bundler', 
@@ -59,7 +24,8 @@ class BundlerUnit(object):
         self.subpyd_files = {} #name, fullpath
         self.copy_files = []
         self.bundler = bundler
-        self.modules = bundler.modules
+        self.descriptor_cache = bundler.descriptor_cache
+        self.module_cache = bundler.module_cache
         
         self.initialize(is_compress = is_compress, 
                is_source = is_source, is_clear = is_clear, 
@@ -108,7 +74,9 @@ class BundlerUnit(object):
     def add_module(self, name, ignore = []):
         if '__pycache__' not in ignore:
             ignore.append('__pycache__')
-        if not self.modules.add_module(name):
+        owner = self.module_cache.add_module(name, self.name)
+        if owner is not None:
+            print("des-{0} dependency '{1}' skipped, it has been added by des-{2}".format(self.name, name, owner))
             return
         names = name.split(".")
         if len(names) == 1:
@@ -121,10 +89,20 @@ class BundlerUnit(object):
             module = temp[module_name]
         path = module.__file__
         if(path.endswith('__init__.py')):
-            path = os.path.dirname(path) 
+            path = os.path.dirname(path)
+            #egg file or zipfile
+            pa = os.path.dirname(path)
+            if os.path.isfile(pa):
+                print(">>> It's a zip file or egg file")
+                self.add_path(pa, ignore = ignore)
+                return
         self.add_path(path, ignore = ignore)
             
     def add_descriptor(self, des):
+        owner = self.descriptor_cache.add_module(des.name, self.name)
+        if owner is not None:
+            print("des-{0} dependency '{1}' skipped, it has been added by des-{2}".format(self.name, des.name, owner))
+            return
         for name, ignore in des.modules:
             self.add_module(name, ignore)
         for dependency in des.dependencies:
@@ -158,10 +136,10 @@ class BundlerUnit(object):
                 return
             
         self.__init_dir()        
-        # 编译所有py文件，要拷贝的，放入copy目录中
+        # compile all the files
+        # files cannot be compiled will be put into the copy list
         self.compile_objs()
         self.compress()
-        #拷贝其他文件
         self.copy()
         
     def __init_dir(self): 
@@ -193,7 +171,6 @@ class BundlerUnit(object):
     def copy(self):
         dirname = self.dirname
         
-        #dll 文件处理
         for file, dest in self.dll_files:
             file_name = os.path.basename(file)
             dll_dir = path_join_and_create(self.dll_dir, dest)

@@ -12,5 +12,5 @@ def build_ctypes(des = None):
     des.add_module('ctypes')
     des.add_module('_ctypes')
     
-    des.add_dependency('struct')
+    des.add_dependency('dummy_threading')
     return des
