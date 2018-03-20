@@ -5,9 +5,8 @@ from pybundle import Bundler, print_left_dependencies
 def bundle_python(dirname):    
     bundler = Bundler(dirname)
     bundler.copy_python_dll()
-    is_clear = True
-    is_clear = False
-    bundler.bundle('python', is_compress = True, is_clear = is_clear)
+#    bundler.python_unit.clear_package()
+    bundler.bundle('python', is_compress = True)
     
 def bundle_script(dirname, script_path): 
     bundler = Bundler(dirname)
@@ -19,8 +18,8 @@ def bundle_package(dirname, package_name, main_script = None):
     bundler = Bundler(dirname)
     unit = bundler.create_unit(package_name)
     unit.add_dependency(package_name)
-#    unit.bundle(is_compress = True, is_clear = True)
-    unit.bundle(is_compress = False, is_clear = False)
+#    unit.clear_package(package_name)
+    unit.bundle(is_compress = False)
     
     if main_script is None:
         main_script = "main/test_" + package_name + ".py"

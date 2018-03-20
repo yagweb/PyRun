@@ -15,7 +15,6 @@ class BundlerUnit(object):
     def __init__(self, name : str, bundler : 'Bundler', 
                  is_compress = True, 
                  is_source = False, 
-                 is_clear = False, 
                  file_dir = None,
                  lib_dir = None, 
                  dll_dir = None,
@@ -30,14 +29,14 @@ class BundlerUnit(object):
         self.module_cache = bundler.module_cache
         
         self.initialize(is_compress = is_compress, 
-               is_source = is_source, is_clear = is_clear, 
+               is_source = is_source, 
                file_dir = file_dir,
                lib_dir = lib_dir, 
                dll_dir = dll_dir,
                pyd_dir = pyd_dir)
             
     def initialize(self, is_compress = False, 
-               is_source = False, is_clear = False, 
+               is_source = False,
                file_dir = None,
                lib_dir = None, 
                dll_dir = None,
@@ -45,7 +44,6 @@ class BundlerUnit(object):
         self.file_dir = file_dir
         self.package_dir = file_dir if lib_dir is None else lib_dir
         self.is_source = is_source
-        self.is_clear = is_clear
         self.dll_dir = file_dir if dll_dir is None else dll_dir
         self.pyd_dir = file_dir if pyd_dir is None else pyd_dir
         self.is_compress = is_compress
@@ -143,21 +141,32 @@ class BundlerUnit(object):
             self.add_module(name)
         else:
             self.add_descriptor(des)
+            
+    def clear_package(self, name = None):
+        '''
+        only clear the package folder or zip file, not the dll, ext files
+        '''
+        if name is None:
+            name = self.name
+        if name == self.name and self.is_compress:
+            zip_file = os.path.join(self.package_dir, self.zip_file)
+            if os.path.exists(zip_file):
+                os.remove(zip_file)
+                return
+        temp = os.path.join(self.package_dir, name)
+        if os.path.exists(temp):
+            shutil.rmtree(temp)
 
-    def bundle(self, is_compress = None, is_source = None, is_clear = None):
+    def bundle(self, is_compress = None, is_source = None):
         print("bundle {0} start...".format(self.name))
         if is_compress is not None:
             self.is_compress = is_compress
         if is_source is not None:
             self.is_source = is_source
-        if is_clear is not None:
-            self.is_clear = is_clear
             
         if self.is_compress:
             dest_file = os.path.join(self.package_dir, self.zip_file)
-            if self.is_clear and os.path.exists(dest_file):
-                os.remove(dest_file)
-            elif not check_file_timeout(dest_file, 
+            if not check_file_timeout(dest_file, 
                                       [bb[0] for bb in self.compile_files], 
                                       ignore = ['__pycache__']):
                 print("%s reused." % dest_file)
@@ -230,13 +239,9 @@ class BundlerUnit(object):
             if os.path.isdir(_file):
                 #should skip if folder is module and exist?
                 temp = os.path.join(self.root, os.path.basename(_file))
-                if not self.is_compress and os.path.exists(temp):                    
-                    if self.is_clear:
-                        shutil.rmtree(temp)
-                        os.mkdir(temp)
-                    else:
-                        print('skipping %s' % _file)
-                        return True
+                if not self.is_compress and os.path.exists(temp):
+                    print('skipping %s' % _file)
+                    return True
                 success = self.compile_dir(_file, cdir, newname, ignore = ignore, 
                                       maxlevels=10, ddir=None, 
                                       optimize=-1, is_source = is_source)
