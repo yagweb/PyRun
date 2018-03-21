@@ -56,7 +56,8 @@ class BundlerUnit(object):
             zip_file = None
         return zip_file
             
-    def add_path(self, path, dest = None, ignore = ['__pycache__'], is_compile = None): 
+    def add_path(self, path, dest = None, ignore = ['__pycache__'], 
+                 is_compile = None, is_override = False): 
         '''
         for .py file, the dest path is relative to self.package_dir
         '''
@@ -78,12 +79,12 @@ class BundlerUnit(object):
                 if is_compile:
                     self.compile_files.append((path, dest, ignore))    
                 else:
-                    self.copy_files.append((path, dest))
+                    self.copy_files.append((path, dest, is_override))
         else:
             if is_compile:
                 self.compile_files.append((path, dest, ignore))   
             else:
-                self.copy_files.append((path, dest))
+                self.copy_files.append((path, dest, is_override))
                         
     def add_module(self, name, ignore = []):
         if '__pycache__' not in ignore:
@@ -215,15 +216,18 @@ class BundlerUnit(object):
             copy_file_if_newer(file, os.path.join(self.pyd_dir, name + '.pyd'))
         
         dirname = self.file_dir
-        for file, dest in self.copy_files:
+        for file, dest, is_override in self.copy_files:
             if dest:
                 destfile = os.path.join(dirname, dest)
                 _dirname = os.path.dirname(destfile)
                 if not os.path.exists(_dirname):
                     os.mkdir(_dirname)
-                copy_file_if_newer(file, destfile) 
             else:
-                copy_file_if_newer(file, os.path.join(dirname, os.path.basename(file))) 
+                destfile = os.path.join(dirname, os.path.basename(file))
+            if is_override:
+                shutil.copy(file, destfile)
+            else:
+                copy_file_if_newer(file, destfile)
             
     def compile_objs(self, maxlevels = 10, ddir = None, optimize = -1):
         files = self.compile_files

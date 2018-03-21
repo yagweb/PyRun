@@ -7,7 +7,8 @@ BITS=32
 OUTDIR=../bin
 OBJDIR=../obj
 #path for searching include file
-HeaderLib=-I../PyRun/ -I../../Python-3.5.2/PC -I../../Python-3.5.2/Include
+PythonSrc=../../Python-3.6.4
+HeaderLib=-I../PyRun/ -I$(PythonSrc)/PC -I$(PythonSrc)/Include
 CFLAGS=-Wall -m$(BITS) -D WIN32 -D MINGW
 LFLAGS=-m$(BITS)
 RELEASE=0

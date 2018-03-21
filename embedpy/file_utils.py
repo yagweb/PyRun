@@ -1,8 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-@author: YangWenguang
-Issues contact with: hbtmdxywg@126.com
-"""
 import os
 import shutil
 

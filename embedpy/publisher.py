@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Fri Sep 22 16:14:04 2017
-提取simupy中需要的文件到simupy-dist用于发布
-@author: yagweb
+syn files from a folder
 """
 import os
 import glob
