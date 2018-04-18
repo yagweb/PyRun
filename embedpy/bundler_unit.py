@@ -8,6 +8,8 @@ from _frozen_importlib_external import _NamespacePath
 
 from .file_utils import file_util, check_file_timeout, \
     copy_file_if_newer, path_join_and_create
+    
+from . import logger
 
 python_source_lib = os.path.abspath(os.path.dirname(os.__file__))
     
@@ -27,6 +29,7 @@ class BundlerUnit(object):
         self.bundler = bundler
         self.descriptor_cache = bundler.descriptor_cache
         self.module_cache = bundler.module_cache
+        self.is_compressable = True
         
         self.initialize(is_compress = is_compress, 
                is_source = is_source, 
@@ -34,6 +37,8 @@ class BundlerUnit(object):
                lib_dir = lib_dir, 
                dll_dir = dll_dir,
                pyd_dir = pyd_dir)
+        # alias
+        self.add_package = self.add_dependency
             
     def initialize(self, is_compress = False, 
                is_source = False,
@@ -91,7 +96,7 @@ class BundlerUnit(object):
             ignore.append('__pycache__')
         owner = self.module_cache.add_module(name, self.name)
         if owner is not None:
-            print("des-{0} dependency '{1}' skipped, it has been added by des-{2}".format(self.name, name, owner))
+            logger.warning("des-{0} dependency '{1}' skipped, it has been added by des-{2}".format(self.name, name, owner))
             return
         names = name.split(".")
         if len(names) == 1:
@@ -105,7 +110,7 @@ class BundlerUnit(object):
         if hasattr(module, '__path__'):  # package
             path = module.__path__
             if isinstance(path, _NamespacePath):
-                print(">>> It's a namespace package")
+                logger.warning(">>> It's a namespace package")
                 path = path._path
             if len(path) == 0:
                 self.add_path(module.__file__, ignore = ignore, is_compile = True)
@@ -116,7 +121,7 @@ class BundlerUnit(object):
             #egg file or zipfile
             pa = os.path.dirname(path)
             if os.path.isfile(pa):
-                print(">>> It's a zip file or egg file")
+                logger.warning(">>> It's a zip file or egg file")
                 self.add_path(pa, ignore = ignore, is_compile = True)
                 return
             else:
@@ -127,8 +132,9 @@ class BundlerUnit(object):
     def add_descriptor(self, des):
         owner = self.descriptor_cache.add_module(des.name, self.name)
         if owner is not None:
-            print("des-{0} dependency '{1}' skipped, it has been added by des-{2}".format(self.name, des.name, owner))
+            logger.warning("des-{0} dependency '{1}' skipped, it has been added by des-{2}".format(self.name, des.name, owner))
             return
+        self.is_compressable = self.is_compressable and des.is_compressable
         for name, ignore in des.modules:
             self.add_module(name, ignore)
         for dependency in des.dependencies:
@@ -136,10 +142,10 @@ class BundlerUnit(object):
         for path, dest, is_compile in des.paths:
             self.add_path(path, dest, is_compile = is_compile)
         
-    def add_dependency(self, name):
+    def add_dependency(self, name, ignore = []):
         des = self.bundler.try_get_descriptor(name)
         if des is None:
-            self.add_module(name)
+            self.add_module(name, ignore = ignore)
         else:
             self.add_descriptor(des)
             
@@ -159,18 +165,24 @@ class BundlerUnit(object):
             shutil.rmtree(temp)
 
     def bundle(self, is_compress = None, is_source = None):
-        print("bundle {0} start...".format(self.name))
+        logger.info("bundle {0} start...".format(self.name))
         if is_compress is not None:
             self.is_compress = is_compress
         if is_source is not None:
             self.is_source = is_source
             
         if self.is_compress:
+            if not self.is_compressable:
+                logger.error("This unit %s should not be compressed, error may encountered" % self.name)
+                state = input("continue, Y/N?")
+                if state.lower() != 'y':
+                    print('exit')
+                    return
             dest_file = os.path.join(self.package_dir, self.zip_file)
             if not check_file_timeout(dest_file, 
                                       [bb[0] for bb in self.compile_files], 
                                       ignore = ['__pycache__']):
-                print("%s reused." % dest_file)
+                logger.warning("%s reused." % dest_file)
                 return
             
         self.__init_dir()        
@@ -200,10 +212,10 @@ class BundlerUnit(object):
         if not self.is_compress:
             return
         zip_file = os.path.join(self.package_dir, self.zip_file)
-        print('bundle start %s' % zip_file) 
+        logger.info('bundle start %s' % zip_file) 
         compile_zip(zip_file, self.root, [])      
-        print('bundle end') 
-        print('remove the temp folder')
+        logger.info('bundle end') 
+        logger.info('remove the temp folder')
         shutil.rmtree(self.root)
                 
     def copy(self):        
@@ -233,18 +245,18 @@ class BundlerUnit(object):
         files = self.compile_files
         cdir = self.root
         is_source = self.is_source
-        print('bundle %s start' % self.name)
+        logger.info('bundle %s start' % self.name)
         def _compile_obj(file, cdir, newname, ignore):
             _file = os.path.abspath(file)
             if not os.path.exists(_file):
                 success = False
-                print("file '%s' not exist" % file)
+                logger.warning("file '%s' not exist" % file)
                 return success
             if os.path.isdir(_file):
                 #should skip if folder is module and exist?
                 temp = os.path.join(self.root, os.path.basename(_file))
                 if not self.is_compress and os.path.exists(temp):
-                    print('skipping %s' % _file)
+                    logger.info('skipping %s' % _file)
                     return True
                 success = self.compile_dir(_file, cdir, newname, ignore = ignore, 
                                       maxlevels=10, ddir=None, 
@@ -265,16 +277,16 @@ class BundlerUnit(object):
             if "*" in file or "?" in file or "[" in file:
                 _files = glob.glob(file)
                 for file in _files:
-                    print("--compile file '%s'" % file)
+                    logger.info("--compile file '%s'" % file)
                     success = _compile_obj(file, _cdir, newname, ignore)
             else:
                 success = _compile_obj(file, _cdir, newname, ignore)
             if not success:
                 break
         if success:
-            print('bundle %s successed.' % self.name)
+            logger.info('bundle %s successed.' % self.name)
         else:
-            print('bundle %s failed.' % self.name)  
+            logger.info('bundle %s failed.' % self.name)  
             
     def compile_file(self, fullname, cdir, newname = None, 
                      ddir = None, optimize = -1, is_source = False):
@@ -307,20 +319,20 @@ class BundlerUnit(object):
                 return True
         if is_source or tail != '.py': #copy directly
             cfile = os.path.join(cdir, name)
-            print('copying file {0} to {1}'.format(fullname, cfile))
+            logger.info('copying file {0} to {1}'.format(fullname, cfile))
             shutil.copy(fullname, cfile) 
             return True
         try:
             cfile = os.path.join(cdir, name) + ('c' if __debug__ else 'o')
             if is_source_remained(fullname, cfile):
-                print('skipping py file {0}'.format(fullname))
+                logger.info('skipping py file {0}'.format(fullname))
                 return True
-            print('compile file {0} to {1}'.format(fullname, cfile))
+            logger.info('compile file {0} to {1}'.format(fullname, cfile))
             py_compile.compile(fullname, cfile, dfile, True,
                                 optimize=optimize)
             return True
         except Exception as ex:
-            print('Exception: %s' % str(ex))
+            logger.error('Exception: %s' % str(ex))
             return False
             
     def compile_dir(self, dir, cdir, newname = None, ignore = ['__pycache__'], 
@@ -334,7 +346,7 @@ class BundlerUnit(object):
             raise Exception('%s is not a folder' % cdir)
         name = newname if newname else os.path.basename(dir)
         cdir = os.path.join(cdir, name)
-        print('Listing {!r}...'.format(dir))
+        logger.info('Listing {!r}...'.format(dir))
         names = os.listdir(dir)    
         names.sort()
         success = True
@@ -363,7 +375,7 @@ def compile_zip(path, dir, excludes = []):
             for filename in filenames:
                 fullname = os.path.join(dirpath, filename)
                 arcname = os.path.relpath(fullname, dir)
-                print('Add... ' + arcname)
+                logger.info('Add... ' + arcname)
                 zpfd.write(fullname, arcname)        
     if len(excludes) == 0:
         zip_dir(dir)
@@ -376,12 +388,12 @@ def compile_zip(path, dir, excludes = []):
                 zip_dir(fullname)
             else:
                 arcname = os.path.relpath(fullname, dir)
-                print('Add... ' + arcname)
+                logger.info('Add... ' + arcname)
                 zpfd.write(fullname, arcname)
     zpfd.close()    
             
 def delete_from_zip(zip_path, delete_dirs, delete_files=[]):
-    print('delete from zip file')
+    logger.info('delete from zip file')
     zin = zipfile.ZipFile (zip_path, 'r')
     new_zipfile = zip_path + '.temp.zip' #create a new file
     zout = zipfile.ZipFile (new_zipfile, 'w')

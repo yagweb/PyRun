@@ -30,9 +30,13 @@ class Bundler(object):
         self.register(descriptors)
         
         # core bundler, unique
-        self.python_unit = self.create_unit('python')
+        # is_compress should not be False
+        self.python_unit = self.create_unit('python', is_compress = False)
         self.python_unit.add_dependency('python')
         self.python_unit.add_dependency('hook')
+        
+    def __getitem__(self, name):
+        return self.get_unit(name)
         
     def copy_python_dll(self):
         mkdir(self.dirname)
@@ -53,15 +57,17 @@ class Bundler(object):
         for des in descriptors:
             self.descriptors[des.name] = des
             
-    def create_unit(self, name):
+    def create_unit(self, name, is_compress = False, is_source = False):
         if name in self.units:
             raise Exception('bundler unit %s has exists' % name)
         
-        unit = BundlerUnit(name, self,
-                              file_dir = self.dirname,
-                              lib_dir = self.lib_dir, 
-                              dll_dir = self.dll_dir,
-                              pyd_dir = self.pyd_dir)
+        unit = BundlerUnit(name, self, 
+                           is_compress = is_compress, 
+                           is_source = is_source,
+                           file_dir = self.dirname,
+                           lib_dir = self.lib_dir, 
+                           dll_dir = self.dll_dir,
+                           pyd_dir = self.pyd_dir)
         self.units[name] = unit
         return unit
         
@@ -75,14 +81,14 @@ class Bundler(object):
         des = self.descriptors.get(name, None)
         return des
         
-    def bundle(self, name, is_compress = True, 
+    def bundle(self, name, is_compress = None, 
                is_source = None, 
                is_clear = False):
         unit = self.get_unit(name)
         unit.bundle(is_compress = is_compress,
                     is_source = is_source)
         
-    def bundle_all(self, is_compress = True, 
+    def bundle_all(self, is_compress = None, 
                    is_source = None):
         self.copy_python_dll()
         for unit in self.units.values():

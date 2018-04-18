@@ -9,6 +9,7 @@ def get_descriptors():
 def build_pandas(des = None):
     if des is None:
         des = ModuleDescriptor('pandas')
+    des.is_compressable = False
     des.add_module('pandas', ignore = ['tests'])
     
     des.add_dependency('pytz')

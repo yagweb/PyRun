@@ -45,6 +45,8 @@ wmain(int argc, wchar_t **argv)
 	wchar_t libpath[1024];
 	pos = libpath;
 	pos = wcs_append(pos, path);
+	pos = wcs_append(pos, L"/../packages/;");
+	pos = wcs_append(pos, path);
 	pos = wcs_append(pos, L"/../packages/python.zip;");
 	//printf("%ls", libpath);
 	Py_SetPath(libpath); // Cannot be removed

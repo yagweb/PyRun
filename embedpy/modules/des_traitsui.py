@@ -26,6 +26,7 @@ def build_traitsui(des = None):
     
     des.add_dependency('cgi')
     des.add_dependency('html')
+    des.add_dependency('distutils')
     return des
 
 def build_pyface(des = None):

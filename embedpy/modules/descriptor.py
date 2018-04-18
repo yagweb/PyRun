@@ -30,8 +30,11 @@ class ModuleDescriptor(object):
             self.mod_ext = ".cpython-%sm-x86_64-linux-gnu.so" % self.pyver
             self.dll_prefix = "lib"
             self.dll_ext = ".so"
+        self.is_compressable = True
         
     def add_module(self, name, ignore = []):
+        if name == "__main__":
+            raise Exception("do not add __main__, use the name explicitly")
         self.modules.append([name, ignore])
         
     def add_dependency(self, name):

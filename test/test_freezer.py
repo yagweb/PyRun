@@ -11,8 +11,9 @@ def freeze_test(dest_path):
     sys.argv.append('build')
     print('build start.')
     fr = Freezer(dest_path)
-    fr.add_package('ctypes')
-    fr.add_exe("main/test_ctypes.py", name = "test")
+    fr['python'].is_compress = False
+    fr.add_package('ctypes', is_compress = True)
+    fr.add_exe("main/test_ctypes.py", name = "test", is_source = True)
     fr.build()
     print('build end.')    
     

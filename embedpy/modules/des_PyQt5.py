@@ -9,6 +9,7 @@ def get_descriptors():
 def build_PyQt5(des = None):
     if des is None:
         des = ModuleDescriptor('PyQt5')
+    des.is_compressable = False
     des.add_module('PyQt5', ignore = ['port_v2'])
     
     des.add_dlls_in_library_bin(['Qt5Core', 'Qt5Gui', 'Qt5Widgets'])

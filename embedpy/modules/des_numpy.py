@@ -9,6 +9,7 @@ def get_descriptors():
 def build_numpy(des = None):
     if des is None:
         des = ModuleDescriptor('numpy')
+    des.is_compressable = False
     des.add_module('numpy', ignore = ['doc',
                                  'f2py', 
                                  'tests'

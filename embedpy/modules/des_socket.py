@@ -65,7 +65,6 @@ def build_socket(des = None):
     des.add_dependency('tracemalloc')
     des.add_dependency('unittest')
     des.add_dependency('tempfile')
-    des.add_dependency('__main__')
     des.add_dependency('difflib')
     des.add_dependency('webbrowser')
     des.add_dependency('uu')

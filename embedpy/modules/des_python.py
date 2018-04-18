@@ -41,4 +41,5 @@ def build_python(des = None):
     des.add_module('ntpath')
     des.add_module('genericpath')
     des.add_module('sysconfig')
+    des.add_dependency('codecs')
     return des

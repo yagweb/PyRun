@@ -32,18 +32,21 @@ class PyRunFinder:
         return None        
 
 def register_packages(root):
-    packages = [os.path.join(root, "packages"),
-                os.path.join(root, "scripts")]
+    packages = [os.path.join(root, "scripts")]
     sys.path.extend(packages)
     
-    packages = os.path.join(root, "packages")
-    files = get_files(packages)
+    packages_dir = os.path.join(root, "packages")
+    if packages_dir not in sys.path:
+        sys.path.append(packages_dir)
+    files = get_files(packages_dir)
     for file_name, path in files:
         if file_name.endswith(".zip") or file_name.endswith(".egg"):
-            sys.path.append(os.path.abspath(path))            
+            if file_name == 'python.zip':
+                continue
+            sys.path.append(os.path.abspath(path))
         
 def register():
-    root = os.path.abspath(os.path.join(os.__file__, "../../../"))
+    root = os.path.abspath(sys.prefix)
     register_packages(root)    
     finder = PyRunFinder(os.path.join(root, "extensions"))
     if len(finder.modules) != 0:

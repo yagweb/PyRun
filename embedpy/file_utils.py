@@ -1,5 +1,7 @@
 import os
 import shutil
+import platform
+from embedpy import logger
 
 python_source_lib = os.path.abspath(os.path.dirname(os.__file__))
     
@@ -9,9 +11,9 @@ def copy_file_if_newer(src, dest):
     if not os.path.exists(dest) or \
        os.stat(src).st_mtime > os.stat(dest).st_mtime:
         shutil.copy(src, dest)
-        print("%s update." % dest)
+        logger.info("%s update." % dest)
         return
-    print("%s reused." % dest) 
+    logger.info("%s reused." % dest) 
 
 def is_file_out_of_date(file, references):
     if os.path.exists(file):
@@ -23,7 +25,7 @@ def is_file_out_of_date(file, references):
             
 def remove_file_if_out_of_date(file, references):
     if is_file_out_of_date(file, references):
-        print("file '%s' is out of date" % file)
+        logger.warning("file '%s' is out of date" % file)
         os.remove(file)
 
 def path_join_and_create(root, sub):
@@ -47,7 +49,6 @@ def mkdir(dirname):
 
 class FileUtil(object):
     def  __init__(self):
-        import platform
         temp = platform.python_version().split('.')
         pyver = "%s%s" % (temp[0], temp[1])
         if platform.system() == "Windows":
@@ -86,11 +87,6 @@ def check_file_timeout(dest_file, dependencies, ignore = ['__pycache__']):
         return True
     file_mtime = os.stat(dest_file).st_mtime
     
-    def check_file(file):
-        if os.stat(file).st_mtime > file_mtime:
-            return True
-        return False
-    
     def check_dir(dir):  
         for name in os.listdir(dir):
             if name in ignore:
@@ -101,12 +97,12 @@ def check_file_timeout(dest_file, dependencies, ignore = ['__pycache__']):
         return False
     
     def check(file):
-        if os.stat(file).st_mtime > file_mtime:
-            return True
         if os.path.isdir(file):
             return check_dir(file)
         else:
-            return check_file(file) 
+            if os.stat(file).st_mtime > file_mtime:
+                logger.warning("file '%s' is out of date" % file)
+                return True
         
     for file in dependencies:
         if check(file):

@@ -9,6 +9,7 @@ def get_descriptors():
 def build_matplotlib(des = None):
     if des is None:
         des = ModuleDescriptor('matplotlib')
+    des.is_compressable = False
     des.add_module('matplotlib')
     
     des.add_dependency('six')
