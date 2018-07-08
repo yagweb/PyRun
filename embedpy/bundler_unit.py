@@ -116,6 +116,7 @@ class BundlerUnit(object):
                 self.add_path(module.__file__, ignore = ignore, is_compile = True)
                 return
             elif len(path) > 1:
+#                path = [bb for bb in path if os.path.exists(os.path.join(bb, "__init__.py"))]
                 raise Exception("package '{0}' has multiple path".format(name))
             path = path[0]
             #egg file or zipfile

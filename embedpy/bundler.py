@@ -55,6 +55,8 @@ class Bundler(object):
             self.descriptors[descriptors.name] = descriptors
             return
         for des in descriptors:
+            if des.name in self.descriptors:
+                raise Exception(f"Descriptor '{des.name}' has existed")
             self.descriptors[des.name] = des
             
     def create_unit(self, name, is_compress = False, is_source = False):
