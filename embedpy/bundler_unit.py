@@ -150,20 +150,23 @@ class BundlerUnit(object):
         else:
             self.add_descriptor(des)
             
-    def clear_package(self, name = None):
+    def clear_package(self, name = None, is_compress = None):
         '''
         only clear the package folder or zip file, not the dll, ext files
         '''
+        if is_compress is None:
+            is_compress = self.is_compress
         if name is None:
             name = self.name
-        if name == self.name and self.is_compress:
-            zip_file = os.path.join(self.package_dir, self.zip_file)
+        if is_compress:
+            zip_file = os.path.join(self.package_dir, f"{name}.zip")
             if os.path.exists(zip_file):
                 os.remove(zip_file)
                 return
-        temp = os.path.join(self.package_dir, name)
-        if os.path.exists(temp):
-            shutil.rmtree(temp)
+        else:
+            temp = os.path.join(self.package_dir, name)
+            if os.path.exists(temp):
+                shutil.rmtree(temp)
 
     def bundle(self, is_compress = None, is_source = None):
         logger.info("bundle {0} start...".format(self.name))
