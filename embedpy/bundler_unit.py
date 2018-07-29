@@ -91,7 +91,7 @@ class BundlerUnit(object):
             else:
                 self.copy_files.append((path, dest, is_override))
                         
-    def add_module(self, name, ignore = []):
+    def add_module(self, name, ignore = [], dest = None):
         if '__pycache__' not in ignore:
             ignore.append('__pycache__')
         owner = self.module_cache.add_module(name, self.name)
@@ -113,7 +113,7 @@ class BundlerUnit(object):
                 logger.warning(">>> It's a namespace package")
                 path = path._path
             if len(path) == 0:
-                self.add_path(module.__file__, ignore = ignore, is_compile = True)
+                self.add_path(module.__file__, ignore = ignore, is_compile = True, dest = dest)
                 return
             elif len(path) > 1:
 #                path = [bb for bb in path if os.path.exists(os.path.join(bb, "__init__.py"))]
@@ -123,12 +123,12 @@ class BundlerUnit(object):
             pa = os.path.dirname(path)
             if os.path.isfile(pa):
                 logger.warning(">>> It's a zip file or egg file")
-                self.add_path(pa, ignore = ignore, is_compile = True)
+                self.add_path(pa, ignore = ignore, is_compile = True, dest = dest)
                 return
             else:
-                self.add_path(path, is_compile = True)
+                self.add_path(path, is_compile = True, dest = dest)
         else:
-            self.add_path(module.__file__, ignore = ignore, is_compile = True)
+            self.add_path(module.__file__, ignore = ignore, is_compile = True, dest = dest)
             
     def add_descriptor(self, des):
         owner = self.descriptor_cache.add_module(des.name, self.name)
@@ -136,8 +136,8 @@ class BundlerUnit(object):
             logger.warning("des-{0} dependency '{1}' skipped, it has been added by des-{2}".format(self.name, des.name, owner))
             return
         self.is_compressable = self.is_compressable and des.is_compressable
-        for name, ignore in des.modules:
-            self.add_module(name, ignore)
+        for name, ignore, dest in des.modules:
+            self.add_module(name, ignore, dest = dest)
         for dependency in des.dependencies:
             self.add_dependency(dependency)
         for path, dest, is_compile in des.paths:
