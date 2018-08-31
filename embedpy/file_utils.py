@@ -51,18 +51,29 @@ class FileUtil(object):
     def  __init__(self):
         temp = platform.python_version().split('.')
         pyver = "%s%s" % (temp[0], temp[1])
+        bitnum = platform.architecture()[0]
         if platform.system() == "Windows":
-            self.mod_ext = ".cp%s-win_amd64.pyd" % pyver
+            if bitnum == "32bit":
+                self.mod_ext = ".cp%s-win32.pyd" % pyver
+            elif bitnum == "64bit":
+                self.mod_ext = ".cp%s-win_amd64.pyd" % pyver
+            else:
+                raise Exception(f"bitnum {bitnum} not recognized")
             self.dll_prefix = ""
             self.dll_ext = ".dll"
         else:
-            self.mod_ext = ".cpython-%sm-x86_64-linux-gnu.so" % pyver
+            if bitnum == "32bit":
+                self.mod_ext = ".cpython-%sm-x86-linux-gnu.so" % pyver
+            elif bitnum == "64bit":
+                self.mod_ext = ".cpython-%sm-x86_64-linux-gnu.so" % pyver
+            else:
+                raise Exception(f"bitnum {bitnum} not recognized")
             self.dll_prefix = "lib"
             self.dll_ext = ".so"
             
     def get_mod_name(self, mod_file):
         file_name = os.path.basename(mod_file)
-        return file_name[:len(file_name)-len(self.mod_ext)]
+        return file_name[:len(file_name) - len(self.mod_ext)]
             
     def get_mod_file(self, mod_name):
         return mod_name + self.mod_ext
