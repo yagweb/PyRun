@@ -32,10 +32,10 @@ class ModuleDescriptor(object):
             self.dll_ext = ".so"
         self.is_compressable = True
         
-    def add_module(self, name, ignore = []):
+    def add_module(self, name, ignore = [], dest = None):
         if name == "__main__":
             raise Exception("do not add __main__, use the name explicitly")
-        self.modules.append([name, ignore])
+        self.modules.append([name, ignore, dest])
         
     def add_dependency(self, name):
         self.dependencies.append(name)
