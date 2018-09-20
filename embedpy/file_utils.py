@@ -17,8 +17,9 @@ def copy_file_if_newer(src, dest):
 
 def is_file_out_of_date(file, references):
     if os.path.exists(file):
+        file_st_time = os.stat(file).st_mtime
         for source in references:
-            if os.stat(source).st_mtime > os.stat(file).st_mtime:
+            if os.path.exists(source) and os.stat(source).st_mtime > file_st_time:
                 return True
                 break 
     return False
