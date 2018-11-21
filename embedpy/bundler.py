@@ -13,7 +13,7 @@ def get_pyver():
     return pyver
 
 class Bundler(object):
-    def __init__(self, dirname):
+    def __init__(self, dirname, is_freeze = False):
         self.dirname = dirname
         self.lib_dir = os.path.join(dirname, "packages")
         self.pyd_dir = os.path.join(dirname, "extensions")
@@ -34,6 +34,9 @@ class Bundler(object):
         self.python_unit = self.create_unit('python', is_compress = False)
         self.python_unit.add_dependency('python')
         self.python_unit.add_dependency('hook')
+        if is_freeze:
+            self.python_unit.add_dependency('runpy')
+            self.python_unit.add_dependency('pkgutil')            
         
     def __getitem__(self, name):
         return self.get_unit(name)

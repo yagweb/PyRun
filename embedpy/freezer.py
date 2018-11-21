@@ -63,11 +63,11 @@ class Freezer(object):
     #    bundler.python_unit.clear_package()
         self.bundler.copy_python_dll()
         
+        logger.info('bundling packages')
+        self.bundler.bundle_all(is_compress = None, is_source = None)
+        
         logger.info('copying exes')
         for name, script, icon in self.exes:
             exe_path = os.path.join(self.dirname, name + ".exe")
-            copy_file_if_newer(console_path, exe_path)
-        
-        logger.info('bundling packages')
-        self.bundler.bundle_all(is_compress = None, is_source = None)       
+            copy_file_if_newer(console_path, exe_path)       
     

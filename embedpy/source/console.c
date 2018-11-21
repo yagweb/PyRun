@@ -16,7 +16,8 @@ wmain(int argc, wchar_t **argv)
 	extern int Py_NoSiteFlag;
 	Py_OptimizeFlag = 2; //1 for -O, and 2 for -OO
 	Py_NoSiteFlag = 1; //why need site module?
-	Py_SetProgramName(L"PyRun");
+	Py_SetProgramName(argv[0]); //full path of the programe, needed by multiprocessing
+	                            // need combine with cwd to get full path
 
 	/*Get the absolute path of the program*/
 	//wchar_t *path = Py_GetProgramFullPath();
@@ -56,10 +57,10 @@ wmain(int argc, wchar_t **argv)
 		"hook.register()\n"
 	);
 	PyRun_SimpleString("try:\n"
-		"    import os, sys\n"
+		"    import os, sys, runpy\n"
 		"    import traceback\n"
-		"    module = 'script_' + os.path.splitext(os.path.basename(sys.argv[0]))[0]\n"
-		"    __import__(module)\n"
+		"    module = '__main__' + os.path.splitext(os.path.basename(sys.argv[0]))[0]\n"
+		"    runpy._run_module_as_main(module)\n"
 		"except Exception as ex:\n"
 		"    print('>>>>>>>>')\n"
 		"    print(ex)\n"

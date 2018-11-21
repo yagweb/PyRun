@@ -5,7 +5,7 @@ import shutil
 import py_compile
 import glob
 from _frozen_importlib_external import _NamespacePath
-
+from io import StringIO
 from .file_utils import file_util, check_file_timeout, \
     copy_file_if_newer, path_join_and_create
     
@@ -60,6 +60,31 @@ class BundlerUnit(object):
         else:
             zip_file = None
         return zip_file
+    
+    def add_main(self, name, path = None):
+        if path is None:
+            path = f"{name}.py"
+        if not os.path.exists(path):
+            raise Exception(f"{path} not exists")
+        dest_file = f"__main__{path}"
+        self.add_path(path, dest_file)
+            
+    def generate_main(self, name, 
+                      module_name = None, 
+                      main_func_name = "main", 
+                 is_multiprocess = False):
+        if module_name is None:
+            module_name = name
+        module_file = f"__main__{name}.py"
+        with open(module_file, 'w') as fp:            
+            if is_multiprocess:
+                fp.write("import multiprocessing\n")
+            fp.write(f"from {module_name} import {main_func_name}\n\n")
+            fp.write("if __name__ == '__main__':\n")
+            if is_multiprocess:
+                fp.write("    multiprocessing.freeze_support()\n")
+            fp.write(f"    {main_func_name}()\n")
+        self.add_path(module_file)
             
     def add_path(self, path, dest = None, ignore = ['__pycache__'], 
                  is_compile = None, is_override = False): 
