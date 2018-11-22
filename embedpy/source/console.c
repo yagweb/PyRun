@@ -56,6 +56,9 @@ wmain(int argc, wchar_t **argv)
 	PyRun_SimpleString("import hook\n"
 		"hook.register()\n"
 	);
+	PyRun_SimpleString("import sys\n"
+		"if sys.platform == 'win32': sys.frozen = True\n"
+	);
 	PyRun_SimpleString("try:\n"
 		"    import os, sys, runpy\n"
 		"    import traceback\n"

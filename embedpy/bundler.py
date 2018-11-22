@@ -33,8 +33,8 @@ class Bundler(object):
         # is_compress should not be False
         self.python_unit = self.create_unit('python', is_compress = False)
         self.python_unit.add_dependency('python')
-        self.python_unit.add_dependency('hook')
         if is_freeze:
+            self.python_unit.add_dependency('hook')
             self.python_unit.add_dependency('runpy')
             self.python_unit.add_dependency('pkgutil')            
         

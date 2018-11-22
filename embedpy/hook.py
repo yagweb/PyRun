@@ -44,10 +44,27 @@ def register_packages(root):
             if file_name == 'python.zip':
                 continue
             sys.path.append(os.path.abspath(path))
+
+def hook_multiprocessing():
+    '''
+    For windows    
+    for osx, ref to PyInstaller/loader/rthooks/pyi_rth_multiprocessing.py
+    '''
+    if sys.platform == 'win32':
+        sys.frozen = True
+    # must not check the '--multiprocessing-fork' in sys.argv
+    # the main process should also set the attr, then the argv passed to subprocess changes
+    # from
+    # 'xxxx.exe', '-OO', '-S', '-c', 'from multiprocessing.spawn import spawn_main; spawn_main(parent_pid=18652, pipe_handle=884)', '--multiprocessing-fork'
+    # to
+    # 'xxx.pyc', '--multiprocessing-fork', 'parent_pid=37040', 'pipe_handle=580'
+    # then the sub processing can working
         
 def register():
     root = os.path.abspath(sys.prefix)
-    register_packages(root)    
+    register_packages(root)
     finder = PyRunFinder(os.path.join(root, "extensions"))
     if len(finder.modules) != 0:
         sys.meta_path.append(finder)
+
+    hook_multiprocessing()
