@@ -92,7 +92,7 @@ class BundlerUnit(object):
         for .py file, the dest path is relative to self.package_dir
         '''
         if not os.path.exists(path):
-            raise Exception("file %s not exists" % path)
+            raise Exception(f"file '{os.path.abspath(path)}' not exists")
         if os.path.isfile(path):
             if path.endswith(file_util.mod_ext):
                 mod_name = file_util.get_mod_name(path)
