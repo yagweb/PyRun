@@ -10,10 +10,13 @@ console_path = os.path.join(embedpy.__path__[0], "bases/console.exe")
 class Freezer(object):
     def __init__(self, dirname):
         self.dirname = dirname
-        self.bundler = Bundler(dirname)
+        self.bundler = Bundler(dirname, is_freeze=True)
         self.exes = []
         self.python_unit = self.bundler.python_unit
         self.file_unit = self.bundler.create_unit('file_unit', is_compress = False)
+
+    def register(self, descriptors):
+        self.bundler.register(descriptors)
         
     def __getitem__(self, name):
         return self.bundler.get_unit(name)
@@ -23,8 +26,8 @@ class Freezer(object):
         if name is None:
             name = script_name
         self.exes.append((name, script, icon))
-        unit = self.bundler.create_unit(name, is_compress = is_compress, is_source = is_source)
-        unit.add_path(script, dest = "../scripts/script_" + name + ext,
+        unit = self.bundler.create_unit(f"__main__{name}", is_compress = is_compress, is_source = is_source)
+        unit.add_path(script, dest = "../scripts/__main__" + name + ext,
                       is_compile = True, is_override = True)
             
     def create_unit(self, name, is_compress = True, is_source = False):
