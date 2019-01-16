@@ -95,7 +95,6 @@ class Bundler(object):
         
     def bundle_all(self, is_compress = None, 
                    is_source = None):
-        self.copy_python_dll()
         for unit in self.units.values():
             unit.bundle(is_compress = is_compress, 
                         is_source = is_source)

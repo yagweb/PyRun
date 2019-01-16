@@ -15,6 +15,8 @@ def build_numpy(des = None):
                                  'tests'
                                  ])
     des.add_dlls_in_library_bin(('libiomp5md', 'mkl_core', 'mkl_intel_thread'))
+    # size 50M, seems intel doesnot need this, donnot know when need
+    des.add_dlls_in_library_bin(('mkl_rt', 'mkl_def'))
     
     # 
     des.add_dependency('ctypes')
