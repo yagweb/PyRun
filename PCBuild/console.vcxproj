@@ -82,8 +82,8 @@
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)..\bin</OutDir>
     <IntDir>$(SolutionDir)obj\$(ArchName)_$(Configuration)\$(ProjectName)\</IntDir>
-    <IncludePath>$(SolutionDir)packages\python361\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)packages\python361\lib\Win64;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(Anaconda3)/include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(Anaconda3)/libs;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -92,8 +92,8 @@
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)..\bin</OutDir>
     <IntDir>$(SolutionDir)obj\$(ArchName)_$(Configuration)\$(ProjectName)\</IntDir>
-    <IncludePath>$(SolutionDir)packages\python361\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)packages\python361\lib\Win64;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(Anaconda3)/include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(Anaconda3)/libs;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

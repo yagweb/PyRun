@@ -14,7 +14,7 @@ def bundle_python(dirname):
 def bundle_script(dirname, script_path): 
     bundler = Bundler(dirname)
     unit = bundler.create_unit('main')
-    unit.add_path(script_path, dest = "console.py", 
+    unit.add_path(script_path, dest = "scripts/__main__console.py", 
                   is_compile = False, is_override = True)
     bundler.bundle('main', is_compress = False, is_source = True)
     
@@ -26,12 +26,12 @@ def bundle_package(dirname, package_name, main_script = None):
     unit.bundle(is_compress = False)
     
     if main_script is None:
-        main_script = "main/test_" + package_name + ".py"
+        main_script = os.path.join(os.path.dirname(__file__), "main/test_" + package_name + ".py")
         
     bundle_script(dirname, main_script)
     
 if __name__ == '__main__':
-    dirname = '../bin/'
+    dirname = os.path.join(os.path.dirname(__file__), '../bin/')
 #    print_left_dependencies('PyQt5')
 #    bundle_python(dirname)
 #    bundle_script(dirname, "main/test_python.py")
@@ -40,7 +40,8 @@ if __name__ == '__main__':
 #    bundle_package(dirname, 'sqlite3')
 #    bundle_package(dirname, 'ctypes')
 #    bundle_package(dirname, 'numpy')
-    bundle_package(dirname, 'PyQt5')
+    # bundle_package(dirname, 'PyQt5')
+    bundle_package(dirname, 'PySide2')
 #    bundle_package(dirname, 'matplotlib')
 #    bundle_package(dirname, 'pandas')
 #    bundle_package(dirname, 'scipy')
