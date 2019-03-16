@@ -61,7 +61,8 @@ def hook_multiprocessing():
     # then the sub processing can working
         
 def register():
-    root = os.path.abspath(sys.prefix)
+    # sys.prefix is the current working memory
+    root = os.path.dirname(os.path.realpath(sys.argv[0]))
     register_packages(root)
     finder = PyRunFinder(os.path.join(root, "extensions"))
     if len(finder.modules) != 0:
