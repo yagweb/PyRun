@@ -126,20 +126,9 @@ wmain(int argc, wchar_t **argv)
 		"hook.register()\n"
 	);
 	
-	PyRun_SimpleString("import sys, os\n"
-		"if sys.platform == 'win32': sys.frozen = True\n"
-		"sys.prefix = os.path.abspath(os.path.dirname(sys.executable))\n"
+	PyRun_SimpleString(
+		"hook.run()\n"
 	);
-	PyRun_SimpleString("try:\n"
-		"    import traceback\n"
-		"    hook.run()\n"
-		"except Exception as ex:\n"
-		"    print('>>>>>>>>')\n"
-		"    print(ex)\n"
-		"    traceback.print_exc()\n"
-		"    print('<<<<<<<<')\n"
-		"    print('Press any key to exit...')\n"
-		"    sys.stdin.read(1)\n");
 	Py_Finalize();
 	return 0;
 }

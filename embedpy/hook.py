@@ -85,12 +85,22 @@ class PathBuilder:
     @property
     def main_mod_name(self):
         return f"__main__{self.program_name}"
+    
+    @property
+    def init_mod(self):        
+        try:
+            init = __import__(init_name)
+        except:
+            init = None
+        return init
 
     def __str__(self):
         return self.root
 
   
 def register():
+    sys.prefix = os.path.abspath(os.path.dirname(sys.executable))
+
     # sys.prefix is the current working memory
     path = PathBuilder()
     register_packages(path.root)
@@ -102,12 +112,34 @@ def register():
 
 
 def run():
+    if sys.platform == 'win32': 
+        sys.frozen = True
     path = PathBuilder()
+    try:
+        import traceback
+        _run(path)
+    except Exception as ex:
+        print('>>>>>>>>')
+        print(ex)
+        traceback.print_exc()
+        print('<<<<<<<<')
+        print('Press any key to exit...')
+        mod = path.init_mod
+        if mod is not None:
+            try:
+                mod.on_err(ex, traceback)
+            except:
+                sys.stdin.read(1)
+        else:
+            sys.stdin.read(1)
+
+
+def _run(path):
     from runpy import _run_module_as_main
     program_name = os.path.basename(sys.argv[0])
     init_name = path.init_mod_name
     try:
-        init = __import__(init_name)        
+        init = __import__(init_name)
     except:
         init = None
     if init is None:
