@@ -68,12 +68,9 @@ def hook_multiprocessing():
 
 class PathBuilder:
     def __init__(self):
-        self.program_name = os.path.splitext(os.path.basename(sys.argv[0]))[0]
-        path = os.environ.get(f'Env_{self.program_name}', None)
-        if path is None:
-            self.root = os.path.dirname(os.path.realpath(sys.argv[0]))
-        else:
-            self.root = path
+        #sys.argv[0]
+        self.program_name = os.path.splitext(os.path.basename(sys.executable))[0]
+        self.root = sys.prefix
     
     def join(self, path, is_abs=False):
         if is_abs:

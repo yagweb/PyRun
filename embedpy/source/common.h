@@ -3,14 +3,23 @@
 
 #include <stdio.h>
 
+#ifndef WINDOWS
+
+#define wchar_t char
+
+#define L 
+#define L 
+
+#endif
+
+
 wchar_t* wcs_copyto(wchar_t* pos, const wchar_t* content);
 
 void wcs_append(wchar_t* pos, const wchar_t* content);
 
 void c_getcwd(wchar_t *buffer, int maxlen);
 
-wchar_t* GetProgramAbsPath(wchar_t *cwd,
-	int maxlen, wchar_t *file);
+wchar_t* GetProgramAbsPath(wchar_t *cwd, int maxlen);
 
 void SplitFileAbsPath(wchar_t *fullpath,
 	wchar_t *dirname, int dirname_size,

@@ -21,6 +21,8 @@ wchar_t* ReadPaths(wchar_t *pos, wchar_t *dirname, wchar_t *path_filename)
 	return pos;
 }
 
+
+#ifdef WINDOWS
 int
 wmain(int argc, wchar_t **argv)
 {
@@ -31,57 +33,49 @@ wmain(int argc, wchar_t **argv)
 
 	/*Get the absolute path of the program*/
 	//wchar_t *path = Py_GetProgramFullPath();
+	//wprintf(L"------%ls\n", argv[0]);
 
 	wchar_t fullpath[500];
-	GetProgramAbsPath(fullpath, 500, argv[0]);
-	//wprintf(L"------%ls\n", path);
+	if (IsAbsPath(argv[0]))
+	{
+		wcs_copyto(fullpath, argv[0]);
+	}
+	else
+	{
+		GetProgramAbsPath(fullpath, 500);
+	}
+	//wprintf(L"------%ls\n", fullpath);
 
-	wchar_t _dirname[500];
+	wchar_t dirname[500];
+
 	wchar_t filename[500];
 	wchar_t basename[200];
 	wchar_t extname[100];
 	SplitFileAbsPath(fullpath,
-		_dirname, 500,
+		dirname, 500,
 		filename, 500,
 		basename, 200,
 		extname, 100);
 
-	wchar_t envname[200];
-	wchar_t* _envname = envname;
-	_envname = wcs_copyto(_envname, L"Env_");
-	_envname = wcs_copyto(_envname, basename);
-	//wprintf(L"------envname = %ls\n", envname);
-	wchar_t *env_path = _wgetenv(envname);
-	/*wprintf(L"------%ls\n", _dirname);
-	wprintf(L"------%ls\n", filename);
-	wprintf(L"------%ls\n", basename);
-	wprintf(L"------%ls\n", extname);
-	wprintf(L"------%ls\n", env_path);*/
-
-	wchar_t* dirname;
-	if (env_path == NULL)
-	{
-		dirname = _dirname;
-	}
-	else
-	{
-		dirname = env_path;
-	}
-	//wprintf(L"------%ls\n", dirname);
+	//wprintf(L"------%ls, %ls, %ls\n", dirname, basename, extname);
 
 	//Set the ProgramName
-	Py_SetProgramName(filename); // full path of the program, needed by multiprocessing
-								 // need combine with cwd to get full path
+	// sys.executable, sys.prefix all comes from here
+	// they are needed by multiprocessing, disutils etc.
+	Py_SetProgramName(fullpath);
+	//Py_SetPythonHome(dirname);
 
-	/*Set PATH for dll search, It cannot be used for pythonXX.dll, 
+	/*Set PATH for dll search, It cannot be used for pythonXX.dll,
 	  because this dll is needed before the wmain executed*/
 	const wchar_t *os_path = _wgetenv(L"PATH");
 	wchar_t* path_env = malloc((wcslen(os_path) + 1024) * sizeof(wchar_t));
 	wchar_t* pos = path_env;
 	pos = wcs_copyto(pos, L"PATH=");
 	pos = wcs_copyto(pos, dirname);
+	pos = wcs_copyto(pos, L";");
+	pos = wcs_copyto(pos, dirname);
 	pos = wcs_copyto(pos, L"/DLLs;");
-	
+
 	//Read PATH File
 	wchar_t path_filename[500];
 	PathJoin(path_filename, dirname, L"PATH");
@@ -92,7 +86,7 @@ wmain(int argc, wchar_t **argv)
 	pos = ReadPaths(pos, dirname, path_filename);
 
 	pos = wcs_copyto(pos, os_path); //comment this, and import sqlite3 to test dll finder
-	
+
 	//wprintf(L"------%ls\n", path_env);
 
 	int iRet = _wputenv(path_env);
@@ -112,11 +106,6 @@ wmain(int argc, wchar_t **argv)
 	pos = wcs_copyto(pos, L"/scripts/;");
 	pos = wcs_copyto(pos, dirname);
 	pos = wcs_copyto(pos, L"/packages/python.zip;");
-	if (env_path != NULL)
-	{
-		pos = wcs_copyto(pos, _dirname);
-		pos = wcs_copyto(pos, L";");
-	}
 
 	// Read .pth file
 	PathJoin(path_filename, dirname, L".pth");
@@ -136,8 +125,10 @@ wmain(int argc, wchar_t **argv)
 	PyRun_SimpleString("import hook\n"
 		"hook.register()\n"
 	);
-	PyRun_SimpleString("import sys\n"
+	
+	PyRun_SimpleString("import sys, os\n"
 		"if sys.platform == 'win32': sys.frozen = True\n"
+		"sys.prefix = os.path.abspath(os.path.dirname(sys.executable))\n"
 	);
 	PyRun_SimpleString("try:\n"
 		"    import traceback\n"
@@ -152,3 +143,12 @@ wmain(int argc, wchar_t **argv)
 	Py_Finalize();
 	return 0;
 }
+#else
+// Linux char* is utf8 encoded.
+int
+main(int argc, char **argv)
+{
+
+}
+#endif
+

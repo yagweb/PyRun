@@ -1,9 +1,12 @@
 #include "common.h"
 #include <stdlib.h>
-#include<string.h>
+#include <string.h>
 #ifdef WINDOWS
 #include <direct.h> // for c_getcwd
+#include <windows.h>
 #else
+#include <limits.h>
+#include <unistd.h>
 #endif
 
 wchar_t* wcs_copyto(wchar_t* pos, const wchar_t* content)
@@ -27,27 +30,47 @@ void c_getcwd(wchar_t *buffer,
 		maxlen
 	);
 #else
-	getcwd(
-		buffer,
-		maxlen
-	);
+	// char*
+	getcwd(buffer, maxlen);
 #endif
 }
 
-wchar_t* GetProgramAbsPath(wchar_t *cwd,
-	int maxlen, wchar_t *file)
+void c_getmodulename(wchar_t *buffer,
+	int maxlen)
 {
-	if (IsAbsPath(file)==1)
-	{
-		wcs_copyto(cwd, file);
-		return cwd;
-	}
-	memset(cwd, 0, maxlen * sizeof(wchar_t));
-	c_getcwd(cwd, maxlen);
-	wchar_t *pos = cwd + wcslen(cwd);
-	pos = wcs_copyto(pos, L"/");
-	pos = wcs_copyto(pos, file);
+#ifdef WINDOWS
+	GetModuleFileNameW(
+		NULL,
+		buffer,
+		maxlen
+	);
+#else
+	char name[500];
+	FILE* stream = fopen("/proc/self/cmdline", "r");
+	fgets(name, 500, stream);
+	fclose(stream);
+
+	return strlen(name);
+#endif
+}
+
+wchar_t* GetProgramAbsPath(wchar_t *cwd, int maxlen)
+{
+#ifdef WINDOWS
+	c_getmodulename(cwd, maxlen);
 	return cwd;
+#else
+	char* path_end;
+	if (readlink("/proc/self/exe", processdir, len) <= 0)
+		return -1;
+	path_end = strrchr(processdir, '/');
+	if (path_end == NULL)
+		return -1;
+	++path_end;
+	strcpy(processname, path_end);
+	*path_end = '';
+	return (size_t)(path_end - processdir);
+#endif
 }
 
 void SplitFileAbsPath(wchar_t *fullpath,
