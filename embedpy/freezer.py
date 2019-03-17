@@ -21,13 +21,18 @@ class Freezer(object):
     def __getitem__(self, name):
         return self.bundler.get_unit(name)
         
-    def add_exe(self, script, icon = None, name = None, is_compress = False, is_source = False):
+    def add_exe(self, script, icon=None, name=None, 
+                      is_compress=False, is_source=False,
+                      init_script=None):
         script_name, ext = os.path.splitext(os.path.basename(script))
         if name is None:
             name = script_name
         self.exes.append((name, script, icon))
         unit = self.bundler.create_unit(f"__main__{name}", is_compress = is_compress, is_source = is_source)
         unit.add_path(script, dest = "../scripts/__main__" + name + ext,
+                      is_compile = True, is_override = True)
+        if init_script is not None:
+            unit.add_path(init_script, dest = "../scripts/__init__" + name + ext,
                       is_compile = True, is_override = True)
             
     def create_unit(self, name, is_compress = True, is_source = False):

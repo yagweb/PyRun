@@ -3,7 +3,9 @@
 
 #include <stdio.h>
 
-wchar_t* wcs_append(wchar_t* pos, const wchar_t* content);
+wchar_t* wcs_copyto(wchar_t* pos, const wchar_t* content);
+
+void wcs_append(wchar_t* pos, const wchar_t* content);
 
 void c_getcwd(wchar_t *buffer, int maxlen);
 

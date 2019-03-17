@@ -16,7 +16,10 @@ def freeze_test(dest_path):
     fr = Freezer(dest_path)
     fr['python'].is_compress = True
     fr.add_package('ctypes', is_compress = True)
-    fr.add_exe(os.path.join(cur_dir, "main/test_ctypes.py"), name = "test", is_source = True)
+    fr.add_exe(os.path.join(cur_dir, "main/test_ctypes.py"), 
+        name="test", 
+        is_source=True,
+        init_script=os.path.join(cur_dir, "main/init_script.py"))
     fr.build()
     print('build end.')
     

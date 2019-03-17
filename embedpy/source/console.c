@@ -2,6 +2,25 @@
 #include <stdlib.h>
 #include "common.h"
 
+wchar_t* ReadPaths(wchar_t *pos, wchar_t *dirname, wchar_t *path_filename)
+{
+	WcharLine* lines = read_wfile(path_filename);
+	WcharLine* current = lines;
+	while (current != NULL)
+	{
+		if (IsAbsPath(current->Content) == 0)
+		{
+			pos = wcs_copyto(pos, dirname);
+			pos = wcs_copyto(pos, L"/");
+		}
+		pos = wcs_copyto(pos, current->Content);
+		pos = wcs_copyto(pos, L";");
+		current = current->Next;
+	}
+	FreeWcharLines(lines);
+	return pos;
+}
+
 int
 wmain(int argc, wchar_t **argv)
 {
@@ -29,8 +48,8 @@ wmain(int argc, wchar_t **argv)
 
 	wchar_t envname[200];
 	wchar_t* _envname = envname;
-	_envname = wcs_append(_envname, L"Env_");
-	_envname = wcs_append(_envname, basename);
+	_envname = wcs_copyto(_envname, L"Env_");
+	_envname = wcs_copyto(_envname, basename);
 	//wprintf(L"------envname = %ls\n", envname);
 	wchar_t *env_path = _wgetenv(envname);
 	/*wprintf(L"------%ls\n", _dirname);
@@ -59,29 +78,20 @@ wmain(int argc, wchar_t **argv)
 	const wchar_t *os_path = _wgetenv(L"PATH");
 	wchar_t* path_env = malloc((wcslen(os_path) + 1024) * sizeof(wchar_t));
 	wchar_t* pos = path_env;
-	pos = wcs_append(pos, L"PATH=");
-	pos = wcs_append(pos, dirname);
-	pos = wcs_append(pos, L"/DLLs;");
+	pos = wcs_copyto(pos, L"PATH=");
+	pos = wcs_copyto(pos, dirname);
+	pos = wcs_copyto(pos, L"/DLLs;");
 	
 	//Read PATH File
 	wchar_t path_filename[500];
 	PathJoin(path_filename, dirname, L"PATH");
-	WcharLine* lines = read_wfile(path_filename);
-	WcharLine* current = lines;
-	while (current != NULL)
-	{
-		if (IsAbsPath(current->Content) == 0)
-		{
-			pos = wcs_append(pos, dirname);
-			pos = wcs_append(pos, L"/");
-		}
-		pos = wcs_append(pos, current->Content);
-		pos = wcs_append(pos, L";");
-		current = current->Next;
-	}
-	FreeWcharLines(lines);
+	pos = ReadPaths(pos, dirname, path_filename);
 
-	pos = wcs_append(pos, os_path); //comment this, and import sqlite3 to test dll finder
+	PathJoin(path_filename, dirname, basename);
+	wcs_append(path_filename, L".PATH");
+	pos = ReadPaths(pos, dirname, path_filename);
+
+	pos = wcs_copyto(pos, os_path); //comment this, and import sqlite3 to test dll finder
 	
 	//wprintf(L"------%ls\n", path_env);
 
@@ -96,21 +106,33 @@ wmain(int argc, wchar_t **argv)
 	/*Set PATH for packages search, python.zip is included*/
 	wchar_t libpath[1024];
 	pos = libpath;
-	pos = wcs_append(pos, dirname);
-	pos = wcs_append(pos, L"/packages/;");
-	pos = wcs_append(pos, dirname);
-	pos = wcs_append(pos, L"/scripts/;");
-	pos = wcs_append(pos, dirname);
-	pos = wcs_append(pos, L"/packages/python.zip;");
+	pos = wcs_copyto(pos, dirname);
+	pos = wcs_copyto(pos, L"/packages/;");
+	pos = wcs_copyto(pos, dirname);
+	pos = wcs_copyto(pos, L"/scripts/;");
+	pos = wcs_copyto(pos, dirname);
+	pos = wcs_copyto(pos, L"/packages/python.zip;");
 	if (env_path != NULL)
 	{
-		pos = wcs_append(pos, _dirname);
-		pos = wcs_append(pos, L";");
+		pos = wcs_copyto(pos, _dirname);
+		pos = wcs_copyto(pos, L";");
 	}
-	//printf("%ls", libpath);
+
+	// Read .pth file
+	PathJoin(path_filename, dirname, L".pth");
+	pos = ReadPaths(pos, dirname, path_filename);
+
+	PathJoin(path_filename, dirname, basename);
+	wcs_append(path_filename, L".pth");
+	pos = ReadPaths(pos, dirname, path_filename);
+
+	//wprintf(L"------%ls\n", libpath);
+
 	Py_SetPath(libpath); // Cannot be removed
 	Py_Initialize();
 	PySys_SetArgv(argc, argv); //Set sys.argv
+	// We can pass the dirname to register(),
+	// Here Unicode to Utf8 is needed.
 	PyRun_SimpleString("import hook\n"
 		"hook.register()\n"
 	);

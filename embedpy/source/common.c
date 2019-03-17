@@ -6,11 +6,16 @@
 #else
 #endif
 
-wchar_t* wcs_append(wchar_t* pos, const wchar_t* content)
+wchar_t* wcs_copyto(wchar_t* pos, const wchar_t* content)
 {
 	wcscpy(pos, content);
 	pos = pos + wcslen(content);
 	return pos;
+}
+
+void wcs_append(wchar_t* pos, const wchar_t* content)
+{
+	wcscpy(pos + wcslen(pos), content);
 }
 
 void c_getcwd(wchar_t *buffer,
@@ -34,14 +39,14 @@ wchar_t* GetProgramAbsPath(wchar_t *cwd,
 {
 	if (IsAbsPath(file)==1)
 	{
-		wcs_append(cwd, file);
+		wcs_copyto(cwd, file);
 		return cwd;
 	}
 	memset(cwd, 0, maxlen * sizeof(wchar_t));
 	c_getcwd(cwd, maxlen);
 	wchar_t *pos = cwd + wcslen(cwd);
-	pos = wcs_append(pos, L"/");
-	pos = wcs_append(pos, file);
+	pos = wcs_copyto(pos, L"/");
+	pos = wcs_copyto(pos, file);
 	return cwd;
 }
 
@@ -135,18 +140,18 @@ wchar_t* PathJoin(wchar_t *dest, wchar_t* path1, wchar_t* path2)
 {
 	if (IsAbsPath(path2) == 1)
 	{
-		wcs_append(dest, path2);
+		wcs_copyto(dest, path2);
 		return dest;
 	}
 
 	wchar_t *pos = dest;
-	pos = wcs_append(pos, path1);
+	pos = wcs_copyto(pos, path1);
 	int path1_len = wcslen(path1);
 	if (path1[path1_len - 1] != L'/' && path1[path1_len - 1] != L'/')
 	{
-		pos = wcs_append(pos, L"/");
+		pos = wcs_copyto(pos, L"/");
 	}
-	pos = wcs_append(pos, path2);
+	pos = wcs_copyto(pos, path2);
 	return dest;
 }
 
