@@ -1,104 +1,6 @@
 #include "Python.h"
-#include <stdio.h>
 #include <stdlib.h>
-#ifdef WINDOWS
-#include <direct.h>
-#else
-#endif
-
-wchar_t* wcs_append(wchar_t* pos, const wchar_t* content)
-{
-	wcscpy(pos, content);
-	pos = pos + wcslen(content);
-	return pos;
-}
-
-void c_getcwd(wchar_t *buffer,
-	int maxlen)
-{
-#ifdef WINDOWS
-	_wgetcwd(
-		buffer,
-		maxlen
-	);
-#else
-#endif
-}
-
-wchar_t* GetProgramAbsPath(wchar_t *cwd,
-	int maxlen, wchar_t *file)
-{
-	memset(cwd, 0, maxlen * sizeof(wchar_t));
-	c_getcwd(cwd, maxlen);
-	wchar_t *pos = cwd + wcslen(cwd);
-	pos = wcs_append(pos, L"/");
-	pos = wcs_append(pos, file);
-	return cwd;
-}
-
-void SplitFileAbsPath(wchar_t *fullpath,
-	wchar_t *dirname, int dirname_size,
-	wchar_t* filename, int filename_size,
-	wchar_t *basename, int basename_size,
-	wchar_t *extname, int extname_size)
-{
-	memset(dirname, 0, dirname_size * sizeof(wchar_t));
-	memset(filename, 0, filename_size * sizeof(wchar_t));
-	memset(basename, 0, basename_size * sizeof(wchar_t));
-	memset(extname, 0, extname_size * sizeof(wchar_t));
-
-	int fullpath_len = wcslen(fullpath);
-	int i = 0;
-	int pos;
-	wchar_t path_splitter1 = L'\\'; // not L"\\"
-	wchar_t path_splitter2 = L'/';
-	wchar_t dot_char = L'.';
-	for (pos = fullpath_len - 1; pos >= 0; pos--)
-	{
-		if (fullpath[pos] == path_splitter1 || fullpath[pos] == path_splitter2)
-		{
-			break;
-		}
-		filename[i] = fullpath[pos];
-		i++;
-	}
-	// copy dirname
-	for (int j = 0; j < pos; j++)
-	{
-		dirname[j] = fullpath[j];
-	}
-	// swap filename
-	int filename_len = wcslen(filename);
-	wchar_t temp;
-	for (pos = 0; pos < filename_len/2; pos++)
-	{
-		temp = filename[pos];
-		filename[pos] = filename[filename_len-pos-1];
-		filename[filename_len - pos - 1] = temp;
-	}
-	// split basename and extname, find the last dot
-	for (pos = filename_len - 1; pos >= 0; pos--)
-	{
-		if (filename[pos] == dot_char)
-		{
-			break;
-		}
-	}
-	// split basename and extname
-	if (pos < 0)
-	{
-		memcpy(basename, filename, filename_len * sizeof(wchar_t));
-	}
-	else if (pos == 0)
-	{
-		memcpy(extname, filename, filename_len * sizeof(wchar_t));
-	}
-	else
-	{
-		memcpy(basename, filename, pos * sizeof(wchar_t));
-		memcpy(extname, filename+pos, (filename_len - pos) * sizeof(wchar_t));
-	}
-}
+#include "common.h"
 
 int
 wmain(int argc, wchar_t **argv)
@@ -130,7 +32,7 @@ wmain(int argc, wchar_t **argv)
 	_envname = wcs_append(_envname, L"Env_");
 	_envname = wcs_append(_envname, basename);
 	//wprintf(L"------envname = %ls\n", envname);
-	const wchar_t *env_path = _wgetenv(envname);
+	wchar_t *env_path = _wgetenv(envname);
 	/*wprintf(L"------%ls\n", _dirname);
 	wprintf(L"------%ls\n", filename);
 	wprintf(L"------%ls\n", basename);
@@ -160,12 +62,29 @@ wmain(int argc, wchar_t **argv)
 	pos = wcs_append(pos, L"PATH=");
 	pos = wcs_append(pos, dirname);
 	pos = wcs_append(pos, L"/DLLs;");
-	pos = wcs_append(pos, dirname);
-	pos = wcs_append(pos, L"/packages/PySide2;");
-	//pos = wcs_append(pos, L"C:/Anaconda3/Library/bin;"); //for dll debug
+	
+	//Read PATH File
+	wchar_t path_filename[500];
+	PathJoin(path_filename, dirname, L"PATH");
+	WcharLine* lines = read_wfile(path_filename);
+	WcharLine* current = lines;
+	while (current != NULL)
+	{
+		if (IsAbsPath(current->Content) == 0)
+		{
+			pos = wcs_append(pos, dirname);
+			pos = wcs_append(pos, L"/");
+		}
+		pos = wcs_append(pos, current->Content);
+		pos = wcs_append(pos, L";");
+		current = current->Next;
+	}
+	FreeWcharLines(lines);
+
 	pos = wcs_append(pos, os_path); //comment this, and import sqlite3 to test dll finder
 	
 	//wprintf(L"------%ls\n", path_env);
+
 	int iRet = _wputenv(path_env);
 	free(path_env);
 	if (iRet < 0)
@@ -183,11 +102,11 @@ wmain(int argc, wchar_t **argv)
 	pos = wcs_append(pos, L"/scripts/;");
 	pos = wcs_append(pos, dirname);
 	pos = wcs_append(pos, L"/packages/python.zip;");
-	/*if (env_path != NULL)
+	if (env_path != NULL)
 	{
 		pos = wcs_append(pos, _dirname);
 		pos = wcs_append(pos, L";");
-	}*/
+	}
 	//printf("%ls", libpath);
 	Py_SetPath(libpath); // Cannot be removed
 	Py_Initialize();
@@ -199,10 +118,8 @@ wmain(int argc, wchar_t **argv)
 		"if sys.platform == 'win32': sys.frozen = True\n"
 	);
 	PyRun_SimpleString("try:\n"
-		"    import os, sys, runpy\n"
 		"    import traceback\n"
-		"    module = '__main__' + os.path.splitext(os.path.basename(sys.argv[0]))[0]\n"
-		"    runpy._run_module_as_main(module)\n"
+		"    hook.run()\n"
 		"except Exception as ex:\n"
 		"    print('>>>>>>>>')\n"
 		"    print(ex)\n"

@@ -69,3 +69,21 @@ def register():
         sys.meta_path.append(finder)
 
     hook_multiprocessing()
+
+def run():
+    from runpy import _run_code, _Error, _get_module_details, _get_main_module_details
+    program_name = os.path.basename(sys.argv[0])
+    mod_name = '__main__' + os.path.splitext(program_name)[0]
+    try:
+        if mod_name != "__main__": # i.e. -m switch
+            mod_name, mod_spec, code = _get_module_details(mod_name, _Error)
+        else:          # i.e. directory or zipfile execution
+            mod_name, mod_spec, code = _get_main_module_details(_Error)
+    except _Error as exc:
+        msg = "%s: %s" % (sys.executable, exc)
+        sys.exit(msg)
+    main_globals = sys.modules["__main__"].__dict__
+    #It's a program, so no need to alter argv
+    #sys.argv[0] = program_name
+    return _run_code(code, main_globals, None,
+                     "__main__", mod_spec)
