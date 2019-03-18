@@ -60,7 +60,7 @@ wmain(int argc, wchar_t **argv)
 	//wprintf(L"------%ls, %ls, %ls\n", dirname, basename, extname);
 
 	//Set the ProgramName
-	// sys.executable, sys.prefix all comes from here
+	// sys.executable all comes from here
 	// they are needed by multiprocessing, disutils etc.
 	Py_SetProgramName(fullpath);
 	//Py_SetPythonHome(dirname);
@@ -120,15 +120,12 @@ wmain(int argc, wchar_t **argv)
 	Py_SetPath(libpath); // Cannot be removed
 	Py_Initialize();
 	PySys_SetArgv(argc, argv); //Set sys.argv
-	// We can pass the dirname to register(),
-	// Here Unicode to Utf8 is needed.
+
+	// Now, run! sys.executable, can be used to the the exe path.
 	PyRun_SimpleString("import hook\n"
-		"hook.register()\n"
-	);
-	
-	PyRun_SimpleString(
 		"hook.run()\n"
 	);
+
 	Py_Finalize();
 	return 0;
 }

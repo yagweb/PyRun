@@ -89,7 +89,7 @@ class PathBuilder:
     @property
     def init_mod(self):        
         try:
-            init = __import__(init_name)
+            init = __import__(self.init_mod_name)
         except:
             init = None
         return init
@@ -98,23 +98,23 @@ class PathBuilder:
         return self.root
 
   
-def register():
-    sys.prefix = os.path.abspath(os.path.dirname(sys.executable))
-
-    # sys.prefix is the current working memory
-    path = PathBuilder()
+def _register(path):
+    '''
+    register the pyd modules in extensions folder
+    '''
     register_packages(path.root)
     finder = PyRunFinder(path.join("extensions"))
     if len(finder.modules) != 0:
         sys.meta_path.append(finder)
 
-    hook_multiprocessing()
-
 
 def run():
-    if sys.platform == 'win32': 
-        sys.frozen = True
+    sys.prefix = os.path.abspath(os.path.dirname(sys.executable))
+
     path = PathBuilder()
+    _register(path)
+    hook_multiprocessing()
+
     try:
         import traceback
         _run(path)
@@ -123,15 +123,16 @@ def run():
         print(ex)
         traceback.print_exc()
         print('<<<<<<<<')
-        print('Press any key to exit...')
         mod = path.init_mod
+        print(path.init_mod_name, mod)
         if mod is not None:
             try:
                 mod.on_err(ex, traceback)
-            except:
-                sys.stdin.read(1)
-        else:
-            sys.stdin.read(1)
+                return
+            except Exception as ex:
+                print(f'{path.init_mod_name} on_err() exception, {str(ex)}')
+        print('Press any key to exit...')
+        sys.stdin.read(1)
 
 
 def _run(path):
