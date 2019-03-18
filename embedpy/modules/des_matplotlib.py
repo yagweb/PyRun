@@ -39,6 +39,11 @@ def build_matplotlib(des = None):
     
     des.add_dll_in_library_bin('mkl_avx2')
     des.add_dll_in_library_bin('mkl_def')
+    des.add_dll_in_library_bin('freetype')
+    des.add_dll_in_library_bin('libifcoremd')
+    des.add_dll_in_library_bin('libmmd')
+    des.add_dll_in_library_bin('libpng16')
+    des.add_dll_in_library_bin('zlib')
     return des
 
 def build_decimal(des = None):

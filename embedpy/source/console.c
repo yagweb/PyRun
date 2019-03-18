@@ -21,6 +21,21 @@ wchar_t* ReadPaths(wchar_t *pos, wchar_t *dirname, wchar_t *path_filename)
 	return pos;
 }
 
+wchar_t* ReadPath(wchar_t *path_filename)
+{
+	wchar_t* res = NULL;
+	WcharLine* lines = read_wfile(path_filename);
+	WcharLine* current = lines;
+	while (current != NULL)
+	{
+		res = malloc((wcslen(current->Content)+1)*sizeof(wchar_t));
+		wcs_copyto(res, current->Content);
+		break;
+	}
+	FreeWcharLines(lines);
+	return res;
+}
+
 
 #ifdef WINDOWS
 int
@@ -46,22 +61,54 @@ wmain(int argc, wchar_t **argv)
 	}
 	//wprintf(L"------%ls\n", fullpath);
 
-	wchar_t dirname[500];
+	wchar_t _dirname[500];
 
 	wchar_t filename[500];
 	wchar_t basename[200];
 	wchar_t extname[100];
 	SplitFileAbsPath(fullpath,
-		dirname, 500,
+		_dirname, 500,
 		filename, 500,
 		basename, 200,
 		extname, 100);
 
 	//wprintf(L"------%ls, %ls, %ls\n", dirname, basename, extname);
 
+	//Get Env_, so the exe sole can be copied to any where.
+	wchar_t envname[200];
+	wchar_t* _envname = envname;
+	_envname = wcs_copyto(_envname, L"Env_");
+	_envname = wcs_copyto(_envname, basename);
+	//wprintf(L"------envname = %ls\n", envname);
+	wchar_t *env_path = _wgetenv(envname);
+
+	wchar_t* dirname;
+	if (env_path == NULL)
+	{
+		dirname = _dirname;
+	}
+	else
+	{
+		dirname = env_path;
+	}
+	//wprintf(L"------%ls\n", dirname);
+
+	//Read Env File
+	wchar_t envfile[100];
+	PathJoin(envfile, _dirname, L"Env_");
+	wcs_append(envfile, basename);
+	wchar_t* dirname_env = ReadPath(envfile);
+	if (dirname_env != NULL)
+	{
+		dirname = dirname_env;
+		//
+		//free(dirname_env);
+	}
+
 	//Set the ProgramName
 	// sys.executable all comes from here
 	// they are needed by multiprocessing, disutils etc.
+	PathJoin(fullpath, dirname, filename);
 	Py_SetProgramName(fullpath);
 	//Py_SetPythonHome(dirname);
 

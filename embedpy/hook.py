@@ -127,8 +127,9 @@ def run():
         print(path.init_mod_name, mod)
         if mod is not None:
             try:
-                mod.on_err(ex, traceback)
-                return
+                is_pause = mod.on_err(ex, traceback)
+                if not is_pause:
+                    return
             except Exception as ex:
                 print(f'{path.init_mod_name} on_err() exception, {str(ex)}')
         print('Press any key to exit...')
