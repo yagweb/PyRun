@@ -12,17 +12,17 @@ def build_PyQt5(des = None):
     des.is_compressable = False
     des.add_module('PyQt5', ignore = ['port_v2'])
     
-    des.add_dlls_in_library_bin(['Qt5Core', 'Qt5Gui', 'Qt5Widgets'])
+    des.add_dlls(['Qt5Core', 'Qt5Gui', 'Qt5Widgets'])
 #    des.add_path("Qt5*", is_glob = True)
-    des.add_dlls_in_library_bin(['api-ms-win-crt-multibyte-l1-1-0', 
-                                 'api-ms-win-crt-utility-l1-1-0'])
-    des.add_dlls_in_library_bin(['Enginio', 'libifcoremd'])
+    des.add_dlls(['api-ms-win-crt-multibyte-l1-1-0', 
+                  'api-ms-win-crt-utility-l1-1-0'])
+    des.add_dlls(['Enginio', 'libifcoremd'])
     if des.python_version >= '3.6.4':
-        des.add_dlls_in_library_bin(['freetype', 'icudt58', 'icuin58', 'icuuc58'])
+        des.add_dlls(['freetype', 'icudt58', 'icuin58', 'icuuc58'])
     else:
-        des.add_dlls_in_library_bin(['icudt57', 'icuin57', 'icuuc57'])
-    des.add_dlls_in_library_bin(['libiomp5md', 'libjpeg', 'libmmd'])
-    des.add_dlls_in_library_bin(['libpng16', 'msvcp140', 'zlib'])
+        des.add_dlls(['icudt57', 'icuin57', 'icuuc57'])
+    des.add_dlls(['libiomp5md', 'libjpeg', 'libmmd'])
+    des.add_dlls(['libpng16', 'msvcp140', 'zlib'])
     
     # fixed: could not find or load the Qt platform plugin "windows"
     # need to copy with folder and put as the same level with the exe

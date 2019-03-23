@@ -12,9 +12,9 @@ def build_PySide2(des = None):
     des.is_compressable = False
     des.add_module('PySide2', ignore = ['include', 'Qt5WebEngineCore.dll'])
     
-#    des.add_dlls_in_library_bin(['Qt5Core', 'Qt5Gui', 'Qt5Widgets'])
+#    des.add_dlls(['Qt5Core', 'Qt5Gui', 'Qt5Widgets'])
 #    des.add_path("Qt5*", is_glob = True)
-    des.add_dll_in_root('python3')
+    des.add_dll('python3')
         
     #
     des.add_dependency('sip')

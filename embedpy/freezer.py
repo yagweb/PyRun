@@ -6,6 +6,7 @@ from .file_utils import copy_file_if_newer
 from . import logger
 
 console_path = os.path.join(embedpy.__path__[0], "bases/console.exe")
+window_path = os.path.join(embedpy.__path__[0], "bases/window.exe")
         
 class Freezer(object):
     def __init__(self, dirname):
@@ -23,11 +24,12 @@ class Freezer(object):
         
     def add_exe(self, script, icon=None, name=None, 
                       is_compress=False, is_source=False,
-                      init_script=None):
+                      init_script=None,
+                      no_console=False):
         script_name, ext = os.path.splitext(os.path.basename(script))
         if name is None:
             name = script_name
-        self.exes.append((name, script, icon))
+        self.exes.append((name, script, icon, no_console))
         unit = self.bundler.create_unit(f"__main__{name}", is_compress = is_compress, is_source = is_source)
         unit.add_path(script, dest = "../scripts/__main__" + name + ext,
                       is_compile = True, is_override = True)
@@ -75,7 +77,10 @@ class Freezer(object):
         self.bundler.bundle_all(is_compress = None, is_source = None)
         
         logger.info('copying exes')
-        for name, script, icon in self.exes:
+        for name, script, icon, no_console in self.exes:
             exe_path = os.path.join(self.dirname, name + ".exe")
-            copy_file_if_newer(console_path, exe_path)       
+            if no_console:
+                copy_file_if_newer(window_path, exe_path)
+            else:
+                copy_file_if_newer(console_path, exe_path)
     

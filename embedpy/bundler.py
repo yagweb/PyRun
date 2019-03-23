@@ -6,6 +6,7 @@ from .cache import ItemCache, ModuleCache
 from .bundler_unit import BundlerUnit
 from .file_utils import copy_file_if_newer, mkdir
 from .modules import ModuleDescriptor
+from .dllcache import DLLCache
 
 def get_pyver():
     temp = platform.python_version().split('.')
@@ -22,8 +23,10 @@ class Bundler(object):
         self.pyver = get_pyver()
         self.descriptor_cache = ItemCache()
         self.module_cache = ModuleCache()
+        self.dll_cache = DLLCache()
+        self.dll_cache.add_all_python()
         
-        self.units = {}                     
+        self.units = {}
         
         # register some basic modules
         from .modules import descriptors
@@ -36,7 +39,7 @@ class Bundler(object):
         if is_freeze:
             self.python_unit.add_dependency('hook')
             self.python_unit.add_dependency('runpy')
-            self.python_unit.add_dependency('pkgutil')            
+            self.python_unit.add_dependency('pkgutil')
         
     def __getitem__(self, name):
         return self.get_unit(name)
@@ -65,7 +68,7 @@ class Bundler(object):
     def create_unit(self, name, is_compress = False, is_source = False):
         if name in self.units:
             raise Exception('bundler unit %s has exists' % name)
-        
+
         unit = BundlerUnit(name, self, 
                            is_compress = is_compress, 
                            is_source = is_source,

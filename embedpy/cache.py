@@ -26,6 +26,7 @@ class ItemCache(object):
         self.modules[name] = owner
         return None
 
+
 class ModuleCache(ItemCache):
     def __init__(self):
         super(ModuleCache, self).__init__()
@@ -46,4 +47,3 @@ class ModuleCache(ItemCache):
                              '_collections','_sha1','_sre','_thread','marshal',
                              '_codecs', 'zipimport', '_locale','gc'],
             owner = 'buildins')
-        

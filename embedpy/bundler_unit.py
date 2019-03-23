@@ -29,6 +29,7 @@ class BundlerUnit(object):
         self.bundler = bundler
         self.descriptor_cache = bundler.descriptor_cache
         self.module_cache = bundler.module_cache
+        self.dll_cache = bundler.dll_cache
         self.is_compressable = True
         
         self.initialize(is_compress = is_compress, 
@@ -85,6 +86,12 @@ class BundlerUnit(object):
                 fp.write("    multiprocessing.freeze_support()\n")
             fp.write(f"    {main_func_name}()\n")
         self.add_path(module_file)
+
+    def add_dll(self, name, dest=None):
+        path = self.dll_cache.get(name)
+        if path is None:
+            raise Exception(f"dll {path} not found")
+        self.dll_files.append((path, dest))
             
     def add_path(self, path, dest = None, ignore = ['__pycache__'], 
                  is_compile = None, is_override = False): 
@@ -167,6 +174,8 @@ class BundlerUnit(object):
             self.add_dependency(dependency)
         for path, dest, is_compile in des.paths:
             self.add_path(path, dest, is_compile = is_compile)
+        for name, dest in des.dlls:
+            self.add_dll(name, dest)
         
     def add_dependency(self, name, ignore = []):
         des = self.bundler.try_get_descriptor(name)
@@ -247,7 +256,7 @@ class BundlerUnit(object):
         logger.info('remove the temp folder')
         shutil.rmtree(self.root)
                 
-    def copy(self):        
+    def copy(self):
         for file, dest in self.dll_files:
             file_name = os.path.basename(file)
             dll_dir = path_join_and_create(self.dll_dir, dest)

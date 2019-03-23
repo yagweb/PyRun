@@ -10,6 +10,7 @@ import os
 import sys
 from embedpy.freezer import Freezer
 
+
 def freeze_test(dest_path): 
     sys.argv.append('build')
     print('build start.')
@@ -22,7 +23,8 @@ def freeze_test(dest_path):
         init_script=os.path.join(cur_dir, "main/init_script.py"))
     fr.build()
     print('build end.')
-    
+
+
 if __name__ == '__main__':
     cur_dir = os.path.dirname(__file__)
     dest_path = os.path.join(cur_dir, '../bin/demo')

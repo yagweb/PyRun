@@ -20,6 +20,7 @@ class ModuleDescriptor(object):
         self.modules = []
         self.dependencies = []
         self.paths = []
+        self.dlls = []
         self.pyver = get_pyver()
         self.python_version = platform.python_version()
         if sys.platform == "win32":
@@ -70,19 +71,11 @@ class ModuleDescriptor(object):
             dest = os.path.join(dist_folder, file)
             self.paths.append((path, dest, True))
 
-    def add_dll_in_root(self, name, dest = None):
-        path = os.path.join(sys.prefix, '{0}{1}'.format(name, self.dll_ext))
-        self.paths.append((path, dest, None))
+    def add_dll(self, name, dest = None):
+        if not isinstance(name, str):
+            raise Exception(f"dll name should be str")
+        self.dlls.append((name, dest))
 
-    def add_dll_in_DLLs(self, name, dest = None):
-        path = os.path.join(sys.prefix, 'DLLs/{0}{1}'.format(name, self.dll_ext))
-        self.paths.append((path, dest, None))
-    
-    def add_dll_in_library_bin(self, name, dest = None):
-        path = os.path.join(sys.prefix, 'Library/bin/{0}{1}'.format(name, self.dll_ext))
-        self.paths.append((path, dest, None))
-    
-    def add_dlls_in_library_bin(self, names, dest = None):
+    def add_dlls(self, names, dest = None):
         for name in names:
-            path = os.path.join(sys.prefix, 'Library/bin/{0}{1}'.format(name, self.dll_ext))
-            self.paths.append((path, dest, None))
+            self.add_dll(name, dest)

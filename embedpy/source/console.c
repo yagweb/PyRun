@@ -2,6 +2,13 @@
 #include <stdlib.h>
 #include "common.h"
 
+#ifdef NOCONSOLE
+
+#include<windows.h>
+#pragma comment( linker, "/subsystem:windows /ENTRY:wmainCRTStartup") // 设置入口地址
+
+#endif
+
 wchar_t* ReadPaths(wchar_t *pos, wchar_t *dirname, wchar_t *path_filename)
 {
 	WcharLine* lines = read_wfile(path_filename);

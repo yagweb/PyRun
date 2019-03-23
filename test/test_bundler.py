@@ -5,19 +5,22 @@
 import os
 from embedpy import Bundler, print_left_dependencies
 
+
 def bundle_python(dirname):    
     bundler = Bundler(dirname)
     bundler.copy_python_dll()
 #    bundler.python_unit.clear_package()
     bundler.bundle('python', is_compress = True)
-    
+
+
 def bundle_script(dirname, script_path): 
     bundler = Bundler(dirname)
     unit = bundler.create_unit('main')
     unit.add_path(script_path, dest = "scripts/__main__console.py", 
                   is_compile = False, is_override = True)
     bundler.bundle('main', is_compress = False, is_source = True)
-    
+
+
 def bundle_package(dirname, package_name, main_script = None):
     bundler = Bundler(dirname)
     unit = bundler.create_unit(package_name)
@@ -29,7 +32,8 @@ def bundle_package(dirname, package_name, main_script = None):
         main_script = os.path.join(os.path.dirname(__file__), "main/test_" + package_name + ".py")
         
     bundle_script(dirname, main_script)
-    
+
+
 if __name__ == '__main__':
     dirname = os.path.join(os.path.dirname(__file__), '../bin/')
 #    print_left_dependencies('PyQt5')
@@ -40,8 +44,8 @@ if __name__ == '__main__':
 #    bundle_package(dirname, 'sqlite3')
 #    bundle_package(dirname, 'ctypes')
 #    bundle_package(dirname, 'numpy')
-    # bundle_package(dirname, 'PyQt5')
-    bundle_package(dirname, 'PySide2')
+    bundle_package(dirname, 'PyQt5')
+    # bundle_package(dirname, 'PySide2')
 #    bundle_package(dirname, 'matplotlib')
 #    bundle_package(dirname, 'pandas')
 #    bundle_package(dirname, 'scipy')
