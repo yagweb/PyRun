@@ -21,6 +21,7 @@ class ModuleDescriptor(object):
         self.dependencies = []
         self.paths = []
         self.dlls = []
+        self.dll_search_paths = []
         self.pyver = get_pyver()
         self.python_version = platform.python_version()
         if sys.platform == "win32":
@@ -79,3 +80,6 @@ class ModuleDescriptor(object):
     def add_dlls(self, names, dest = None):
         for name in names:
             self.add_dll(name, dest)
+
+    def add_dll_search_path(self, path):
+        self.dll_search_paths.append(path)

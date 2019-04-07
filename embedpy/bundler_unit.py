@@ -90,7 +90,7 @@ class BundlerUnit(object):
     def add_dll(self, name, dest=None):
         path = self.dll_cache.get(name)
         if path is None:
-            raise Exception(f"dll {path} not found")
+            raise Exception(f"dll {name} not found, search paths: {self.dll_cache.search_path}")
         self.dll_files.append((path, dest))
             
     def add_path(self, path, dest = None, ignore = ['__pycache__'], 
@@ -163,6 +163,7 @@ class BundlerUnit(object):
             self.add_path(module.__file__, ignore = ignore, is_compile = True, dest = dest)
             
     def add_descriptor(self, des):
+        logger.info(f"add descriptor {des.name}")
         owner = self.descriptor_cache.add_module(des.name, self.name)
         if owner is not None:
             logger.warning("des-{0} dependency '{1}' skipped, it has been added by des-{2}".format(self.name, des.name, owner))
@@ -174,6 +175,8 @@ class BundlerUnit(object):
             self.add_dependency(dependency)
         for path, dest, is_compile in des.paths:
             self.add_path(path, dest, is_compile = is_compile)
+        for path in des.dll_search_paths:
+            self.dll_cache.add_path(path)
         for name, dest in des.dlls:
             self.add_dll(name, dest)
         

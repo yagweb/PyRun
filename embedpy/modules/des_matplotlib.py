@@ -1,7 +1,9 @@
 '''
 hand written descriptor for the matplotlib module
 '''
+import platform
 from .descriptor import ModuleDescriptor
+from distutils.version import StrictVersion
 
 def get_descriptors():
     return build_matplotlib(), build_decimal()
@@ -39,7 +41,8 @@ def build_matplotlib(des = None):
     
     des.add_dll('mkl_avx2')
     des.add_dll('mkl_def')
-    des.add_dll('freetype')
+    if StrictVersion(platform.python_revision()) > StrictVersion('3.6.1'):
+        des.add_dll('freetype')
     des.add_dll('libifcoremd')
     des.add_dll('libmmd')
     des.add_dll('libpng16')

@@ -7,6 +7,11 @@ class DLLCache:
     def __init__(self):
         self.dlls = {}
         self.env_paths = os.environ["PATH"].split(";")
+        self.search_paths = []
+
+    @property
+    def search_path(self):
+        return '\n'.join(self.search_paths)
 
     def add_rel_path(self, path):
         path = os.path.join(sys.prefix, path)
@@ -16,6 +21,10 @@ class DLLCache:
         print(f"add dll path: {path}")
         if not os.path.isdir(path):
             return
+        path = os.path.abspath(path)
+        if path in self.search_paths:
+            return
+        self.search_paths.append(path)
         for file in os.listdir(path):
             if not file.endswith(file_util.dll_ext):
                 continue
