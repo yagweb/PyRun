@@ -38,10 +38,11 @@ def build_matplotlib(des = None):
     des.add_dependency('csv')
     des.add_dependency('unicodedata')
     des.add_dependency('decimal')
+    des.add_dependency('distutils')
     
     des.add_dll('mkl_avx2')
     des.add_dll('mkl_def')
-    if StrictVersion(platform.python_revision()) > StrictVersion('3.6.1'):
+    if StrictVersion(platform.python_version()) > StrictVersion('3.6.1'):
         des.add_dll('freetype')
     des.add_dll('libifcoremd')
     des.add_dll('libmmd')

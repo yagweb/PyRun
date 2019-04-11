@@ -90,7 +90,8 @@ class BundlerUnit(object):
     def add_dll(self, name, dest=None):
         path = self.dll_cache.get(name)
         if path is None:
-            raise Exception(f"dll {name} not found, search paths: {self.dll_cache.search_path}")
+            logger.error(f"dll {name} not found, search paths: {self.dll_cache.search_path}")
+            return
         self.dll_files.append((path, dest))
             
     def add_path(self, path, dest = None, ignore = ['__pycache__'], 
