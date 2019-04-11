@@ -1,7 +1,7 @@
 #
 import os
 from .descriptor import ModuleDescriptor
-from warnings import warn
+from ..logger import logger
 
 descriptors = []
 
@@ -12,6 +12,6 @@ for file in os.listdir(os.path.dirname(__file__)):
         try:
             des = _tmp_.get_descriptors()
         except Exception as ex:
-            warn(f">> register module failed '{name}', {str(ex)}")
+            logger.error(f">> register module failed '{name}', {str(ex)}")
             continue
         descriptors.extend(des)

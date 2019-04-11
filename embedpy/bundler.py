@@ -1,12 +1,14 @@
 import os
 import sys
 import platform
+import logging
 
 from .cache import ItemCache, ModuleCache
 from .bundler_unit import BundlerUnit
 from .file_utils import copy_file_if_newer, mkdir
 from .modules import ModuleDescriptor
 from .dllcache import DLLCache
+from .logger import logger
 
 def get_pyver():
     temp = platform.python_version().split('.')
@@ -14,8 +16,9 @@ def get_pyver():
     return pyver
 
 class Bundler(object):
-    def __init__(self, dirname, is_freeze = False):
+    def __init__(self, dirname, is_freeze=False, logging_level=logging.INFO):
         self.dirname = dirname
+        self.setLevel(logging_level)
         self.lib_dir = os.path.join(dirname, "packages")
         self.pyd_dir = os.path.join(dirname, "extensions")
         self.dll_dir = os.path.join(dirname, "DLLs")
@@ -40,6 +43,9 @@ class Bundler(object):
             self.python_unit.add_dependency('hook')
             self.python_unit.add_dependency('runpy')
             self.python_unit.add_dependency('pkgutil')
+
+    def setLevel(self, level):
+        logger.setLevel(level)
         
     def __getitem__(self, name):
         return self.get_unit(name)

@@ -1,20 +1,23 @@
 import os
+import logging
 import embedpy
 from .bundler import Bundler
 from .file_utils import copy_file_if_newer
-    
-from . import logger
+from .logger import logger
 
 console_path = os.path.join(embedpy.__path__[0], "bases/console.exe")
 window_path = os.path.join(embedpy.__path__[0], "bases/window.exe")
         
 class Freezer(object):
-    def __init__(self, dirname):
+    def __init__(self, dirname, logging_level=logging.INFO):
         self.dirname = dirname
-        self.bundler = Bundler(dirname, is_freeze=True)
+        self.bundler = Bundler(dirname, is_freeze=True, logging_level=logging_level)
         self.exes = []
         self.python_unit = self.bundler.python_unit
         self.file_unit = self.bundler.create_unit('file_unit', is_compress = False)
+
+    def setLevel(self, level):
+        self.bundler.setLevel(level)
 
     def register(self, descriptors):
         self.bundler.register(descriptors)

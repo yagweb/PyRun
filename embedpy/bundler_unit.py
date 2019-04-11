@@ -8,8 +8,7 @@ from _frozen_importlib_external import _NamespacePath
 from io import StringIO
 from .file_utils import file_util, check_file_timeout, \
     copy_file_if_newer, path_join_and_create
-    
-from . import logger
+from .logger import logger
 
 python_source_lib = os.path.abspath(os.path.dirname(os.__file__))
     

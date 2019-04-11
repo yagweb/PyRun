@@ -1,7 +1,7 @@
 import os
 import shutil
 import platform
-from embedpy import logger
+from .logger import logger
 
 python_source_lib = os.path.abspath(os.path.dirname(os.__file__))
     
