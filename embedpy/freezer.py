@@ -49,6 +49,13 @@ class Freezer(object):
             unit = self.bundler.get_unit(unit_name)
         unit.add_path(path, dest = dest, ignore = ignore, 
                  is_compile = is_compile, is_override = is_override)
+
+    def add_dll(self, name, dest=None, unit_name = None):
+        if unit_name is None:
+            unit = self.file_unit
+        else:
+            unit = self.bundler.get_unit(unit_name)
+        unit.add_dll(name, dest=dest)
     
     def add_package(self, name, unit_name = None, 
                     is_compress = False, is_source = False,
