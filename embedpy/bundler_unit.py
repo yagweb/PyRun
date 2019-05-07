@@ -5,13 +5,14 @@ import shutil
 import py_compile
 import glob
 from _frozen_importlib_external import _NamespacePath
-from io import StringIO
 from .file_utils import file_util, check_file_timeout, \
     copy_file_if_newer, path_join_and_create
 from .logger import logger
 
+
 python_source_lib = os.path.abspath(os.path.dirname(os.__file__))
-    
+
+
 class BundlerUnit(object):
     def __init__(self, name : str, bundler : 'Bundler', 
                  is_compress = True, 
@@ -158,7 +159,7 @@ class BundlerUnit(object):
                 self.add_path(pa, ignore = ignore, is_compile = True, dest = dest)
                 return
             else:
-                self.add_path(path, is_compile = True, dest = dest)
+                self.add_path(path, ignore = ignore, is_compile = True, dest = dest)
         else:
             self.add_path(module.__file__, ignore = ignore, is_compile = True, dest = dest)
             
@@ -387,12 +388,13 @@ class BundlerUnit(object):
             raise Exception('%s is not a folder' % cdir)
         name = newname if newname else os.path.basename(dir)
         cdir = os.path.join(cdir, name)
-        logger.info('Listing {!r}...'.format(dir))
+        logger.info('list {!r}...'.format(dir))
         names = os.listdir(dir)    
         names.sort()
         success = True
         for name in names:
             if name in ignore:
+                logger.warn(f'skip {name} in {dir}')
                 continue
             fullname = os.path.join(dir, name)
             if not os.path.isdir(fullname):
@@ -402,12 +404,14 @@ class BundlerUnit(object):
             elif (maxlevels > 0 and name != os.curdir and name != os.pardir and
                   os.path.isdir(fullname) and not os.path.islink(fullname)):
                 success = self.compile_dir(fullname, cdir, None,
-                                      ignore, maxlevels - 1, 
-                                      ddir, optimize, is_source = is_source)
+                                      ignore = ignore, maxlevels=maxlevels - 1, 
+                                      ddir=ddir, optimize=optimize, 
+                                      is_source=is_source)
                 if not success:
                     return success
         return success
-   
+
+
 def compile_zip(path, dir, excludes = []):
     #zpfd = zipfile.ZipFile(path, mode='w', compression=zipfile.ZIP_DEFLATED)
     zpfd = zipfile.ZipFile(path, mode='w')
@@ -432,7 +436,8 @@ def compile_zip(path, dir, excludes = []):
                 logger.info('Add... ' + arcname)
                 zpfd.write(fullname, arcname)
     zpfd.close()    
-            
+
+
 def delete_from_zip(zip_path, delete_dirs, delete_files=[]):
     logger.info('delete from zip file')
     zin = zipfile.ZipFile (zip_path, 'r')
@@ -453,6 +458,7 @@ def delete_from_zip(zip_path, delete_dirs, delete_files=[]):
     zin.close()     
     #override, if the file existed
     shutil.move(new_zipfile, zip_path) 
+
 
 def is_source_remained(source, dest):
     if not os.path.exists(dest) or \
