@@ -170,7 +170,7 @@ class BundlerUnit(object):
             logger.warning("des-{0} dependency '{1}' skipped, it has been added by des-{2}".format(self.name, des.name, owner))
             return
         self.is_compressable = self.is_compressable and des.is_compressable
-        for name, ignore, dest in des.modules:
+        for name, ignore, dest in des.modules.values():
             self.add_module(name, ignore, dest = dest)
         for dependency in des.dependencies:
             self.add_dependency(dependency)
