@@ -1,6 +1,9 @@
 import os
 import sys
 import imp
+import time
+import datetime
+import traceback
 
 
 def get_files(path):
@@ -66,11 +69,79 @@ def hook_multiprocessing():
     # then the sub processing can working
 
 
-class PathBuilder:
+class MainModuleLoader:
     def __init__(self):
         #sys.argv[0]
         self.program_name = os.path.splitext(os.path.basename(sys.executable))[0]
         self.root = sys.prefix
+        self.on_error_from_init = None
+        self.on_error_from_main = None
+        # self.default_error_file = loader.join("error.txt")
+        # under current working directory
+        self.default_error_file = os.path.abspath("error.txt")
+    
+    def initialize(self):
+        if os.path.exists(self.default_error_file):
+            os.remove(self.default_error_file)
+        try:
+            self._load()
+            return True
+        except Exception as ex:
+            self.on_error(ex, traceback)
+            return False
+
+    def _load(self):
+        # load init module
+        try:
+            self.init_mod = __import__(self.init_mod_name)
+        except:
+            self.init_mod = None
+        
+        # get main module name
+        if self.init_mod is None:
+            self.real_main_mod_name = self.main_mod_name
+        else:
+            self.real_main_mod_name = self.init_mod.get_main_module(self)
+            if hasattr(self.init_mod, "on_error"):
+                self.on_error_from_init = self.init_mod.on_error
+
+    def run(self):
+        try:
+            from runpy import _run_module_as_main
+            _run_module_as_main(self.real_main_mod_name, 
+                                alter_argv=False)
+        except Exception as ex:
+            self._init_on_error()
+            print('>>>>>>>>')
+            print(ex)
+            traceback.print_exc()
+
+            # Call the build in error handle
+            self.on_error(ex, traceback)
+
+            # Call the user defined on error handle
+            is_stop = False
+            for on_error in [self.on_error_from_init, 
+                             self.on_error_from_main]: 
+                if on_error is None:
+                    continue
+                try:
+                    is_stop = on_error(self, ex, traceback)
+                    if is_stop:
+                        break
+                except Exception as inner_ex:
+                    self.on_error(inner_ex, traceback)
+                    print('>>>>>>>>')
+                    print(inner_ex)
+                    traceback.print_exc()
+
+    def _init_on_error(self):
+        try:
+            main_mod = __import__('__main__')
+            if hasattr(main_mod, "on_error"):
+                self.on_error_from_main = main_mod.on_error
+        except:
+            pass
     
     def join(self, path, is_abs=False):
         if is_abs:
@@ -85,25 +156,35 @@ class PathBuilder:
     @property
     def main_mod_name(self):
         return f"__main__{self.program_name}"
-    
-    @property
-    def init_mod(self):        
-        try:
-            init = __import__(self.init_mod_name)
-        except:
-            init = None
-        return init
+
+    def on_error(self, ex, tb):
+        with open(self.default_error_file, 'w') as fp:
+            cur_date = datetime.datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d %H:%M:%S")
+            fp.write(f'Time: {cur_date}\n')
+            fp.write('\n--------- Command ---------\n')
+            fp.write(f"executable: {sys.executable}\n")
+            fp.write(f"argv: {sys.argv}\n")
+            fp.write('\n--------- Error Info ---------\n')
+            fp.write(f"{str(ex)}\n")
+            fp.write("\n--------- Traceback ----------\n")
+            # fp.write(traceback.format_exc())
+            traceback.print_exc(file=fp)
+            fp.write('\n--------- Debug Info ---------\n')
+            fp.write(f">>> dll search path:\n\n")
+            fp.writelines(os.getenv('PATH').replace(';', '\n'))
+            fp.write(f"\n>>> module search path:\n\n")
+            fp.writelines('\n'.join(sys.path))
 
     def __str__(self):
         return self.root
 
   
-def _register(path):
+def _register(root):
     '''
     register the pyd modules in extensions folder
     '''
-    register_packages(path.root)
-    finder = PyRunFinder(path.join("extensions"))
+    register_packages(root)
+    finder = PyRunFinder(os.path.join(root, "extensions"))
     if len(finder.modules) != 0:
         sys.meta_path.append(finder)
 
@@ -111,41 +192,11 @@ def _register(path):
 def run():
     sys.prefix = os.path.abspath(os.path.dirname(sys.executable))
 
-    path = PathBuilder()
-    _register(path)
+    loader = MainModuleLoader()
+    _register(loader.root)
     hook_multiprocessing()
 
-    try:
-        import traceback
-        _run(path)
-    except Exception as ex:
-        print('>>>>>>>>')
-        print(ex)
-        traceback.print_exc()
-        print('<<<<<<<<')
-        mod = path.init_mod
-        print(path.init_mod_name, mod)
-        if mod is not None:
-            try:
-                is_pause = mod.on_err(ex, traceback)
-                if not is_pause:
-                    return
-            except Exception as ex:
-                print(f'{path.init_mod_name} on_err() exception, {str(ex)}')
-        print('Press any key to exit...')
-        sys.stdin.read(1)
-
-
-def _run(path):
-    from runpy import _run_module_as_main
-    program_name = os.path.basename(sys.argv[0])
-    init_name = path.init_mod_name
-    try:
-        init = __import__(init_name)
-    except:
-        init = None
-    if init is None:
-        mod_name = path.main_mod_name
-    else:
-        mod_name = init.get_main_module(path)
-    return _run_module_as_main(mod_name, alter_argv=False)
+    state = loader.initialize()    
+    if not state:
+        return
+    loader.run()

@@ -42,7 +42,7 @@ class Freezer(object):
             
     def create_unit(self, name, is_compress = True, is_source = False):
         return self.bundler.create_unit(name, is_compress = is_compress, 
-                                        is_source = is_source)       
+                                        is_source = is_source)
             
     def add_path(self, path, dest = None, ignore = ['__pycache__'], 
                  is_compile = None, is_override = False, unit_name = None):

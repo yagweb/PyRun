@@ -43,6 +43,7 @@ class Bundler(object):
             self.python_unit.add_dependency('hook')
             self.python_unit.add_dependency('runpy')
             self.python_unit.add_dependency('pkgutil')
+            self.python_unit.add_dependency('datetime')
 
     def setLevel(self, level):
         logger.setLevel(level)

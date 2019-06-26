@@ -11,7 +11,7 @@ import sys
 from embedpy.freezer import Freezer
 
 
-def freeze_test(dest_path): 
+def freeze_test(dest_path):
     sys.argv.append('build')
     print('build start.')
     fr = Freezer(dest_path)

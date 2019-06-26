@@ -357,7 +357,7 @@ class BundlerUnit(object):
                     self.subpyd_files[pydname] = fullname #excluded from the zipfile
                     return True
             if name.endswith(file_util.dll_ext):
-                self.dll_files.append(fullname) #excluded from the zipfile
+                self.dll_files.append((fullname, None)) #excluded from the zipfile
                 return True
         if is_source or tail != '.py': #copy directly
             cfile = os.path.join(cdir, name)
