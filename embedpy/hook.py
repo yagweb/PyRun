@@ -39,9 +39,6 @@ class PyRunFinder:
 
 
 def register_packages(root):
-    packages = [os.path.join(root, "scripts")]
-    sys.path.extend(packages)
-    
     packages_dir = os.path.join(root, "packages")
     if packages_dir not in sys.path:
         sys.path.append(packages_dir)
@@ -160,19 +157,20 @@ class MainModuleLoader:
     def on_error(self, ex, tb):
         with open(self.default_error_file, 'w') as fp:
             cur_date = datetime.datetime.fromtimestamp(time.time()).strftime("%Y-%m-%d %H:%M:%S")
+            fp.write('--------- Error Log ---------\n\n')
             fp.write(f'Time: {cur_date}\n')
-            fp.write('\n--------- Command ---------\n')
+            fp.write('\n--------- Command ---------\n\n')
             fp.write(f"executable: {sys.executable}\n")
             fp.write(f"argv: {sys.argv}\n")
-            fp.write('\n--------- Error Info ---------\n')
+            fp.write('\n--------- Error Info ---------\n\n')
             fp.write(f"{str(ex)}\n")
-            fp.write("\n--------- Traceback ----------\n")
+            fp.write("\n--------- Traceback ----------\n\n")
             # fp.write(traceback.format_exc())
             traceback.print_exc(file=fp)
-            fp.write('\n--------- Debug Info ---------\n')
+            fp.write('\n--------- Debug Info ---------\n\n')
             fp.write(f">>> dll search path:\n\n")
-            fp.writelines(os.getenv('PATH').replace(';', '\n'))
-            fp.write(f"\n>>> module search path:\n\n")
+            fp.writelines(os.getenv('PATH').strip(";").replace(';;', '\n').replace(';', '\n'))
+            fp.write(f"\n\n>>> module search path:\n\n")
             fp.writelines('\n'.join(sys.path))
 
     def __str__(self):

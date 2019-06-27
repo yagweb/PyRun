@@ -9,16 +9,31 @@
 #include <unistd.h>
 #endif
 
-wchar_t* wcs_copyto(wchar_t* pos, const wchar_t* content)
+// left_size is the buffer size / sizeof(wchar_t)
+wchar_t* wcs_copyto(wchar_t* pos, const wchar_t* content, size_t* left_size)
 {
+	size_t length = wcslen(content);
+	if (*left_size < length + 1)
+	{
+		return NULL;
+	}
 	wcscpy(pos, content);
-	pos = pos + wcslen(content);
+	pos += length;
+	*left_size -= length;
 	return pos;
 }
 
-void wcs_append(wchar_t* pos, const wchar_t* content)
+// left_size is the buffer size / sizeof(wchar_t)
+int wcs_append(wchar_t* pos, const wchar_t* content, size_t total_size)
 {
-	wcscpy(pos + wcslen(pos), content);
+	size_t length = wcslen(content);
+	wchar_t* end_pos = pos + wcslen(pos);
+	if (total_size < length + wcslen(pos) + 1)
+	{
+		return 1;
+	}
+	wcscpy(end_pos, content);
+	return 0;
 }
 
 void c_getcwd(wchar_t *buffer,
@@ -54,14 +69,14 @@ void c_getmodulename(wchar_t *buffer,
 #endif
 }
 
-wchar_t* GetProgramAbsPath(wchar_t *cwd, int maxlen)
+wchar_t* GetProgramAbsPath(wchar_t *cwd, size_t maxlen)
 {
 #ifdef WINDOWS
-	c_getmodulename(cwd, maxlen);
+	c_getmodulename(cwd, (int)maxlen);
 	return cwd;
 #else
 	char* path_end;
-	if (readlink("/proc/self/exe", processdir, len) <= 0)
+	if (readlink("/proc/self/exe", cwd, len) <= 0)
 		return -1;
 	path_end = strrchr(processdir, '/');
 	if (path_end == NULL)
@@ -86,7 +101,7 @@ void SplitFileAbsPath(wchar_t *fullpath,
 
 	int fullpath_len = (int)wcslen(fullpath);
 	int i = 0;
-	int pos;
+	size_t pos;
 	for (pos = fullpath_len - 1; pos >= 0; pos--)
 	{
 		// not L"\\"
@@ -103,7 +118,7 @@ void SplitFileAbsPath(wchar_t *fullpath,
 		dirname[j] = fullpath[j];
 	}
 	// swap filename
-	int filename_len = wcslen(filename);
+	size_t filename_len = wcslen(filename);
 	wchar_t temp;
 	for (pos = 0; pos < filename_len / 2; pos++)
 	{
@@ -137,7 +152,7 @@ void SplitFileAbsPath(wchar_t *fullpath,
 
 int IsAbsPath(wchar_t *path)
 {
-	int len = wcslen(path);
+	size_t len = wcslen(path);
 #ifdef WINDOWS
 	if (len >= 2 && path[1] == L':')
 	{
@@ -159,23 +174,27 @@ int IsAbsPath(wchar_t *path)
 #endif
 }
 
-wchar_t* PathJoin(wchar_t *dest, wchar_t* path1, wchar_t* path2)
+wchar_t* PathJoin(wchar_t *dest, wchar_t* path1, wchar_t* path2, size_t dest_size)
 {
+	size_t left_size = dest_size;
 	if (IsAbsPath(path2) == 1)
 	{
-		wcs_copyto(dest, path2);
-		return dest;
+		return wcs_copyto(dest, path2, &left_size);
 	}
 
 	wchar_t *pos = dest;
-	pos = wcs_copyto(pos, path1);
-	int path1_len = wcslen(path1);
+	pos = wcs_copyto(pos, path1, &left_size);
+	size_t path1_len = wcslen(path1);
 	if (path1[path1_len - 1] != L'/' && path1[path1_len - 1] != L'/')
 	{
-		pos = wcs_copyto(pos, L"/");
+		pos = wcs_copyto(pos, L"/", &left_size);
+		if (pos == NULL)
+		{
+			return NULL;
+		}
 	}
-	pos = wcs_copyto(pos, path2);
-	return dest;
+	pos = wcs_copyto(pos, path2, &left_size);
+	return pos;
 }
 
 //每行最大字节数
@@ -224,7 +243,7 @@ WcharLine* read_wfile(wchar_t *path)
 	while (!feof(fp)) //循环读取每一行，直到文件尾
 	{
 		fgetws(strLine, MAX_LINE, fp); //将fp所指向的文件一行内容读到strLine缓冲区
-		int len = wcslen(strLine);
+		size_t len = wcslen(strLine);
 		if (len >= 2 && strLine[len - 2] == L'\r' && strLine[len - 1] == L'\n')
 		{
 			strLine[len - 2] = L'\0';

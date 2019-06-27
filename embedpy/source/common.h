@@ -13,13 +13,13 @@
 #endif
 
 
-wchar_t* wcs_copyto(wchar_t* pos, const wchar_t* content);
+wchar_t* wcs_copyto(wchar_t* pos, const wchar_t* content, size_t* left_size);
 
-void wcs_append(wchar_t* pos, const wchar_t* content);
+int wcs_append(wchar_t* pos, const wchar_t* content, size_t total_size);
 
 void c_getcwd(wchar_t *buffer, int maxlen);
 
-wchar_t* GetProgramAbsPath(wchar_t *cwd, int maxlen);
+wchar_t* GetProgramAbsPath(wchar_t *cwd, size_t maxlen);
 
 void SplitFileAbsPath(wchar_t *fullpath,
 	wchar_t *dirname, int dirname_size,
@@ -29,7 +29,7 @@ void SplitFileAbsPath(wchar_t *fullpath,
 
 int IsAbsPath(wchar_t *path);
 
-wchar_t* PathJoin(wchar_t *dest, wchar_t* path1, wchar_t* path2);
+wchar_t* PathJoin(wchar_t *dest, wchar_t* path1, wchar_t* path2, size_t dest_size);
 
 typedef struct _WcharLine WcharLine;
 
