@@ -174,7 +174,9 @@ class BundlerUnit(object):
             self.add_module(name, ignore, dest = dest)
         for dependency in des.dependencies:
             self.add_dependency(dependency)
-        for path, dest, is_compile in des.paths:
+        for path, dest, is_compile in des.paths:            
+            if callable(path):
+                path = path()
             self.add_path(path, dest, is_compile = is_compile)
         for path in des.dll_search_paths:
             self.dll_cache.add_path(path)
@@ -275,13 +277,25 @@ class BundlerUnit(object):
                 destfile = os.path.join(dirname, dest)
                 _dirname = os.path.dirname(destfile)
                 if not os.path.exists(_dirname):
-                    os.mkdir(_dirname)
+                    os.makedirs(_dirname)
             else:
                 destfile = os.path.join(dirname, os.path.basename(file))
-            if is_override:
-                shutil.copy(file, destfile)
+            if os.path.isfile(file):
+                if is_override:
+                    shutil.copy(file, destfile)
+                else:
+                    copy_file_if_newer(file, destfile)
             else:
-                copy_file_if_newer(file, destfile)
+                if os.path.exists(destfile):
+                    if os.path.isfile(destfile):
+                        raise Exception("folder {file} dest is a file, {destfile}, should be folder")
+                    if is_override:
+                        shutil.rmtree(destfile)
+                        shutil.copytree(file, destfile)
+                    else:
+                        logger.warning("folder '%s' has exist, it will be skipped" % destfile)
+                else:
+                    shutil.copytree(file, destfile)
             
     def compile_objs(self, maxlevels = 10, ddir = None, optimize = -1):
         files = self.compile_files

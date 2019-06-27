@@ -40,36 +40,38 @@ class Freezer(object):
             unit.add_path(init_script, dest = "../scripts/__init__" + name + ext,
                       is_compile = True, is_override = True)
             
-    def create_unit(self, name, is_compress = True, is_source = False):
-        return self.bundler.create_unit(name, is_compress = is_compress, 
-                                        is_source = is_source)
+    def create_unit(self, name, is_compress=True, is_source=False):
+        return self.bundler.create_unit(name, is_compress=is_compress, 
+                                        is_source=is_source)
             
-    def add_path(self, path, dest = None, ignore = ['__pycache__'], 
-                 is_compile = None, is_override = False, unit_name = None):
+    def add_path(self, path, dest=None, ignore=['__pycache__'], 
+                 is_compile = None, is_override=False, unit_name=None):
         if unit_name is None:
             unit = self.file_unit
         else:
             unit = self.bundler.get_unit(unit_name)
-        unit.add_path(path, dest = dest, ignore = ignore, 
-                 is_compile = is_compile, is_override = is_override)
+        unit.add_path(path, dest=dest, ignore=ignore, 
+                 is_compile=is_compile, is_override=is_override)
 
-    def add_dll(self, name, dest=None, unit_name = None):
+    def add_dll(self, name, dest=None, unit_name=None):
         if unit_name is None:
             unit = self.file_unit
         else:
             unit = self.bundler.get_unit(unit_name)
         unit.add_dll(name, dest=dest)
     
-    def add_package(self, name, unit_name = None, 
-                    is_compress = False, is_source = False,
-                    ignore = []):
+    def add_package(self, name, unit_name=None, 
+                    is_compress=False, is_source=False,
+                    ignore=None):
+        if ignore is None:
+            ignore = []
         if unit_name is None:
             unit_name = name
         if unit_name not in self.bundler.units:
-            self.bundler.create_unit(unit_name, is_compress = is_compress, 
-                                     is_source = is_source)
+            self.bundler.create_unit(unit_name, is_compress=is_compress, 
+                                     is_source=is_source)
         unit = self.bundler.get_unit(unit_name)
-        unit.add_dependency(name, ignore = ignore) 
+        unit.add_dependency(name, ignore=ignore) 
         
     def build(self):
         if not os.path.exists(self.dirname):
