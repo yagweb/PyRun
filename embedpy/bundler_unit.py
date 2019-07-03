@@ -239,11 +239,11 @@ class BundlerUnit(object):
     def __init_dir(self): 
         #folder init
         if not os.path.exists(self.package_dir):
-            os.mkdir(self.package_dir)
+            os.makedirs(self.package_dir)
         if not os.path.exists(self.dll_dir):
-            os.mkdir(self.dll_dir)
+            os.makedirs(self.dll_dir)
         if not os.path.exists(self.pyd_dir):
-            os.mkdir(self.pyd_dir)
+            os.makedirs(self.pyd_dir)
         
         if self.is_compress: # create a temp folder
             self.root = os.path.abspath('temp%d' % time.time())
