@@ -1,4 +1,6 @@
-from .bundler import Bundler, print_left_dependencies
+from .bundler import Bundler, UpdateBundler, print_left_dependencies
+
+from .freezer import Freezer
 
 from .modules.descriptor import ModuleDescriptor
     

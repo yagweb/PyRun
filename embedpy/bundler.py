@@ -2,6 +2,7 @@ import os
 import sys
 import platform
 import logging
+import shutil
 
 from .cache import ItemCache, ModuleCache
 from .bundler_unit import BundlerUnit
@@ -10,13 +11,15 @@ from .modules import ModuleDescriptor
 from .dllcache import DLLCache
 from .logger import logger
 
+
 def get_pyver():
     temp = platform.python_version().split('.')
     pyver = "%s%s" % (temp[0], temp[1])
     return pyver
 
+
 class Bundler(object):
-    def __init__(self, dirname, is_freeze=False, logging_level=logging.INFO):
+    def __init__(self, dirname, logging_level=logging.INFO):
         self.dirname = dirname
         self.setLevel(logging_level)
         self.lib_dir = os.path.join(dirname, "packages")
@@ -34,16 +37,18 @@ class Bundler(object):
         # register some basic modules
         from .modules import descriptors
         self.register(descriptors)
-        
+
+    def create_python_unit(self, is_compress=False, is_freeze=False, name="python"):
         # core bundler, unique
         # is_compress should not be False
-        self.python_unit = self.create_unit('python', is_compress = False)
-        self.python_unit.add_dependency('python')
+        python_unit = self.create_unit(name, is_compress=is_compress)
+        python_unit.add_dependency('python')
         if is_freeze:
-            self.python_unit.add_dependency('hook')
-            self.python_unit.add_dependency('runpy')
-            self.python_unit.add_dependency('pkgutil')
-            self.python_unit.add_dependency('datetime')
+            python_unit.add_dependency('hook')
+            python_unit.add_dependency('runpy')
+            python_unit.add_dependency('pkgutil')
+            python_unit.add_dependency('datetime')
+        return python_unit
 
     def setLevel(self, level):
         logger.setLevel(level)
@@ -71,8 +76,8 @@ class Bundler(object):
             if des.name in self.descriptors:
                 raise Exception(f"Descriptor '{des.name}' has existed")
             self.descriptors[des.name] = des
-            
-    def create_unit(self, name, is_compress = False, is_source = False):
+
+    def create_unit(self, name, is_compress=False, is_source=False):
         if name in self.units:
             raise Exception('bundler unit %s has exists' % name)
 
@@ -85,24 +90,24 @@ class Bundler(object):
                            pyd_dir = self.pyd_dir)
         self.units[name] = unit
         return unit
-        
+
     def get_unit(self, name):
         unit = self.units.get(name, None)
         if unit is None:
             raise Exception("bundler_unit '%s' not exists" % name)
         return unit
-        
+
     def try_get_descriptor(self, name):
         des = self.descriptors.get(name, None)
         return des
-        
+
     def bundle(self, name, is_compress = None, 
                is_source = None, 
                is_clear = False):
         unit = self.get_unit(name)
         unit.bundle(is_compress = is_compress,
                     is_source = is_source)
-        
+
     def bundle_all(self, is_compress = None, 
                    is_source = None):
         for unit in self.units.values():
@@ -125,6 +130,22 @@ class Bundler(object):
             if package_name not in self.module_cache.modules:
                 package_names.add(package_name)
         return package_names
+
+
+class UpdateBundler(Bundler):
+    def __init__(self, dirname, logging_level=logging.INFO):
+        dirname = os.path.join(dirname, "update")
+        if os.path.exists(dirname):
+            shutil.rmtree(dirname)
+        super(UpdateBundler, self).__init__(dirname, logging_level=logging_level)
+
+    def create_unit_by_package(self, package, is_compress=False, is_source=False):
+        unit = self.create_unit(package, 
+                                is_compress=is_compress,
+                                is_source = is_source)
+        unit.add_package(package)
+        unit.clear_package()
+
 
 def print_left_dependencies(package_name):
     '''

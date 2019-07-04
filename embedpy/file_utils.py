@@ -4,7 +4,7 @@ import platform
 from .logger import logger
 
 python_source_lib = os.path.abspath(os.path.dirname(os.__file__))
-    
+
 def copy_file_if_newer(src, dest):
     if not os.path.exists(src):
         raise Exception("%s not exist" % src)

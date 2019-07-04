@@ -190,7 +190,7 @@ class BundlerUnit(object):
         else:
             self.add_descriptor(des)
             
-    def clear_package(self, name = None, is_compress = None):
+    def clear_package(self, name=None, is_compress=None):
         '''
         only clear the package folder or zip file, not the dll, ext files
         '''

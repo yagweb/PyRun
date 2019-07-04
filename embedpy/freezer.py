@@ -5,15 +5,17 @@ from .bundler import Bundler
 from .file_utils import copy_file_if_newer
 from .logger import logger
 
+
 console_path = os.path.join(embedpy.__path__[0], "bases/console.exe")
 window_path = os.path.join(embedpy.__path__[0], "bases/window.exe")
-        
+
+
 class Freezer(object):
     def __init__(self, dirname, logging_level=logging.INFO):
         self.dirname = dirname
-        self.bundler = Bundler(dirname, is_freeze=True, logging_level=logging_level)
+        self.bundler = Bundler(dirname, logging_level=logging_level)
         self.exes = []
-        self.python_unit = self.bundler.python_unit
+        self.python_unit = self.bundler.create_python_unit(is_freeze=True)
         self.file_unit = self.bundler.create_unit('file_unit', is_compress = False)
 
     def setLevel(self, level):
@@ -24,6 +26,11 @@ class Freezer(object):
         
     def __getitem__(self, name):
         return self.bundler.get_unit(name)
+
+    def add_update_exe(self, name="update", icon=None):
+        self.python_unit.add_dependency('update_helper')
+        script = os.path.join(os.path.dirname(__file__), "update_main.py")
+        self.add_exe(script, icon=icon, name=name)
         
     def add_exe(self, script, icon=None, name=None, 
                       is_compress=False, is_source=False,
@@ -95,4 +102,3 @@ class Freezer(object):
                 copy_file_if_newer(window_path, exe_path)
             else:
                 copy_file_if_newer(console_path, exe_path)
-    

@@ -21,6 +21,7 @@ def freeze_test(dest_path):
         name="test", 
         is_source=True,
         init_script=os.path.join(cur_dir, "main/init_script.py"))
+    fr.add_update_exe()
     fr.build()
     print('build end.')
 
