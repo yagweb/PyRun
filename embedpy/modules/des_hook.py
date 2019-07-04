@@ -37,6 +37,6 @@ def build_update(des = None):
                  'fnmatch', 'enum', 'copyreg', 
                  'lzma', '_bz2', '_compression', 
                  'linecache', 'sre_compile', 'time', 
-                 'token', '_lzma', 'sre_parse']:
+                 'token', '_lzma', 'sre_parse', 'glob']:
         des.add_module(name)
     return des
