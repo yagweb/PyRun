@@ -107,6 +107,7 @@ class MainModuleLoader:
             from runpy import _run_module_as_main
             _run_module_as_main(self.real_main_mod_name, 
                                 alter_argv=False)
+            return True
         except Exception as ex:
             self._init_on_error()
             print('>>>>>>>>')
@@ -131,6 +132,7 @@ class MainModuleLoader:
                     print('>>>>>>>>')
                     print(inner_ex)
                     traceback.print_exc()
+            return False
 
     def _init_on_error(self):
         try:
@@ -197,4 +199,4 @@ def run():
     state = loader.initialize()    
     if not state:
         return
-    loader.run()
+    return loader.run()

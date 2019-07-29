@@ -112,7 +112,7 @@ wmain(int argc, wchar_t **argv)
 		if (state == NULL)
 		{
 			WriteError("the program path is too long\n");
-			return 0;
+			return 1;
 		}
 	}
 	else
@@ -171,7 +171,7 @@ wmain(int argc, wchar_t **argv)
 	if (state != 0)
 	{
 		WriteError("the path of the envfile is too long\n");
-		return 0;
+		return 2;
 	}
 	wchar_t* dirname_env = ReadPath(envfile);
 	if (dirname_env != NULL)
@@ -212,7 +212,7 @@ wmain(int argc, wchar_t **argv)
 	if (pos == NULL)
 	{
 		WriteError("too much lines in the PATH file\n");
-		return 0;
+		return 3;
 	}
 
 	PathJoin(path_filename, dirname, basename, fullpath_size);
@@ -220,20 +220,20 @@ wmain(int argc, wchar_t **argv)
 	if (state1 != 0)
 	{
 		WriteError("the X.PATH filename is too long\n");
-		return 0;
+		return 4;
 	}
 	pos = ReadPaths(pos, dirname, path_filename, &path_env_left_size);
 	if (pos == NULL)
 	{
 		WriteError("too much lines in the X.PATH file\n");
-		return 0;
+		return 5;
 	}
 
 	pos = wcs_copyto(pos, os_path, &path_env_left_size); //comment this, and import sqlite3 to test dll finder
 	if (pos == NULL)
 	{
 		WriteError("the OS PATH is too long\n");
-		return 0;
+		return 6;
 	}
 #ifdef _DEBUG
 	wprintf(L">> Set PATH: %ls\n", path_env);
@@ -243,7 +243,7 @@ wmain(int argc, wchar_t **argv)
 	if (iRet < 0)
 	{
 		WriteError("set PATH error\n");
-		return 0;
+		return 7;
 	}
 
 	/*Set PATH for packages search, python.zip is included*/
@@ -263,7 +263,7 @@ wmain(int argc, wchar_t **argv)
 	if (pos == NULL)
 	{
 		WriteError("too much lines in the .pth file\n");
-		return 0;
+		return 8;
 	}
 
 	PathJoin(path_filename, dirname, basename, fullpath_size);
@@ -271,13 +271,13 @@ wmain(int argc, wchar_t **argv)
 	if (state2 != 0)
 	{
 		WriteError(".pth file name length is too long\n");
-		return 0;
+		return 9;
 	}
 	pos = ReadPaths(pos, dirname, path_filename, &libpath_left_size);
 	if (pos == NULL)
 	{
 		WriteError("too much lines in the X.pth file\n");
-		return 0;
+		return 10;
 	}
 #ifdef _DEBUG
 	wprintf(L">> sys.path = %ls\n", libpath);
@@ -295,12 +295,45 @@ wmain(int argc, wchar_t **argv)
 	PySys_SetArgv(argc, argv); //Set sys.argv
 
 	// Now, run! sys.executable, can be used to the the exe path.
-	PyRun_SimpleString("import hook\n"
+	/*PyRun_SimpleString("import hook\n"
 		"hook.run()\n"
-	);
-
+	);*/
+	PyGILState_STATE gstate = PyGILState_Ensure();
+	PyObject* hook = PyImport_ImportModule("hook");
+	if (hook == NULL)
+	{
+		PyGILState_Release(gstate);
+		Py_Finalize();
+		return 100;
+	}
+	PyObject* run = PyObject_GetAttrString(hook, "run");
+	if (run == NULL)
+	{
+		PyGILState_Release(gstate);
+		Py_Finalize();
+		return 101;
+	}
+	PyObject* run_result = PyObject_CallFunction(run, "");
+	if (run_result == NULL)
+	{
+		PyGILState_Release(gstate);
+		Py_Finalize();
+		return 102;
+	}
+	int value = PyObject_IsTrue(run_result);
+	Py_DECREF(hook);
+	Py_DECREF(run);
+	Py_DECREF(run_result);
+	PyGILState_Release(gstate);
 	Py_Finalize();
-	return 0;
+	if (value == 0)
+	{
+		return 103;
+	}
+	else
+	{
+		return 0;
+	}
 }
 #else
 // Linux char* is utf8 encoded.
