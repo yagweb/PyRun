@@ -43,5 +43,6 @@ def build_numpy(des = None):
     des.add_dependency('hashlib')
     des.add_dependency('bisect')
     des.add_dependency('dummy_threading')
+    des.add_dependency('platform')
     return des
     

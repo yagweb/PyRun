@@ -16,7 +16,7 @@ class Freezer(object):
         self.bundler = Bundler(dirname, logging_level=logging_level)
         self.exes = []
         self.python_unit = self.bundler.create_python_unit(is_freeze=True)
-        self.file_unit = self.bundler.create_unit('file_unit', is_compress = False)
+        self.file_unit = self.bundler.create_unit('__file_unit__', is_compress = False)
 
     def setLevel(self, level):
         self.bundler.setLevel(level)
@@ -50,9 +50,9 @@ class Freezer(object):
     def create_unit(self, name, is_compress=True, is_source=False):
         return self.bundler.create_unit(name, is_compress=is_compress, 
                                         is_source=is_source)
-            
+ 
     def add_path(self, path, dest=None, ignore=['__pycache__'], 
-                 is_compile = None, is_override=False, unit_name=None):
+                 is_compile=None, is_override=False, unit_name=None):
         if unit_name is None:
             unit = self.file_unit
         else:

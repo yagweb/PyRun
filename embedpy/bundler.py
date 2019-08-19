@@ -138,6 +138,7 @@ class UpdateBundler(Bundler):
         if os.path.exists(dirname):
             shutil.rmtree(dirname)
         super(UpdateBundler, self).__init__(dirname, logging_level=logging_level)
+        self.file_unit = self.create_unit('__file_unit__', is_compress = False)
 
     def create_unit_by_package(self, package, is_compress=False, is_source=False):
         unit = self.create_unit(package, 
@@ -145,6 +146,15 @@ class UpdateBundler(Bundler):
                                 is_source = is_source)
         unit.add_package(package)
         unit.clear_package()
+ 
+    def add_path(self, path, dest=None, ignore=['__pycache__'], 
+                 is_compile=None, is_override=False, unit_name=None):
+        if unit_name is None:
+            unit = self.file_unit
+        else:
+            unit = self.get_unit(unit_name)
+        unit.add_path(path, dest=dest, ignore=ignore, 
+                 is_compile=is_compile, is_override=is_override)
 
 
 def print_left_dependencies(package_name):

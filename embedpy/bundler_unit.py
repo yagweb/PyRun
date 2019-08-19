@@ -94,14 +94,23 @@ class BundlerUnit(object):
             return
         self.dll_files.append((path, dest))
             
-    def add_path(self, path, dest = None, ignore = ['__pycache__'], 
-                 is_compile = None, is_override = False): 
+    def add_path(self, path, dest=None, ignore=['__pycache__'], 
+                 is_compile=None, is_override=False): 
         '''
         for .py file, the dest path is relative to self.package_dir
         '''
         if not os.path.exists(path):
             raise Exception(f"file '{os.path.abspath(path)}' not exists")
         if os.path.isfile(path):
+            if dest is not None:
+                if is_compile is None:
+                    is_compile = True if path.endswith('.py') else False
+                if is_compile:
+                    self.compile_files.append((path, dest, ignore))
+                else:
+                    self.copy_files.append((path, dest, is_override))
+                return
+
             if path.endswith(file_util.mod_ext):
                 mod_name = file_util.get_mod_name(path)
                 self.subpyd_files[mod_name] = path
@@ -115,7 +124,7 @@ class BundlerUnit(object):
                 if is_compile is None:
                     is_compile = True if path.endswith('.py') else False
                 if is_compile:
-                    self.compile_files.append((path, dest, ignore))    
+                    self.compile_files.append((path, dest, ignore))
                 else:
                     self.copy_files.append((path, dest, is_override))
         else:
@@ -123,8 +132,15 @@ class BundlerUnit(object):
                 self.compile_files.append((path, dest, ignore))   
             else:
                 self.copy_files.append((path, dest, is_override))
-                        
+
     def add_module(self, name, ignore = [], dest = None):
+        try:
+            self._add_module(name, ignore, dest)
+        except Exception as ex:
+            logger.error(f"add_module {name} failed, {ex}")
+            raise
+
+    def _add_module(self, name, ignore = [], dest = None):
         if '__pycache__' not in ignore:
             ignore.append('__pycache__')
         owner = self.module_cache.add_module(name, self.name)
@@ -161,7 +177,9 @@ class BundlerUnit(object):
             else:
                 self.add_path(path, ignore = ignore, is_compile = True, dest = dest)
         else:
-            self.add_path(module.__file__, ignore = ignore, is_compile = True, dest = dest)
+            # pythonnet clr module has this bug
+            module_path = module.__file__ if os.path.exists(module.__file__) else module.__spec__.origin
+            self.add_path(module_path, ignore = ignore, is_compile = True, dest = dest)
             
     def add_descriptor(self, des):
         logger.info(f"add descriptor {des.name}")
