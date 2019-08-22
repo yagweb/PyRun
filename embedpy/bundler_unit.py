@@ -68,7 +68,7 @@ class BundlerUnit(object):
         if not os.path.exists(path):
             raise Exception(f"{path} not exists")
         dest_file = f"__main__{path}"
-        self.add_path(path, dest_file)
+        self._add_path(path, dest_file)
             
     def generate_main(self, name, 
                       module_name = None, 
@@ -85,7 +85,7 @@ class BundlerUnit(object):
             if is_multiprocess:
                 fp.write("    multiprocessing.freeze_support()\n")
             fp.write(f"    {main_func_name}()\n")
-        self.add_path(module_file)
+        self._add_path(module_file)
 
     def add_dll(self, name, dest=None):
         path = self.dll_cache.get(name)
@@ -93,8 +93,21 @@ class BundlerUnit(object):
             logger.error(f"dll {name} not found, search paths: {self.dll_cache.search_path}")
             return
         self.dll_files.append((path, dest))
-            
+
     def add_path(self, path, dest=None, ignore=['__pycache__'], 
+                 is_compile=None, is_override=False):
+        if "*" in path or "?" in path or "[" in path:
+            _files = glob.glob(path)
+            for file in _files:
+                if dest is not None:
+                    newdest = os.path.join(dest, os.path.basename(file))
+                else:
+                    newdest = os.path.basename(file)
+                self._add_path(file, newdest, ignore, is_compile, is_override)
+        else:
+            self._add_path(path, dest, ignore, is_compile, is_override)
+
+    def _add_path(self, path, dest=None, ignore=['__pycache__'], 
                  is_compile=None, is_override=False): 
         '''
         for .py file, the dest path is relative to self.package_dir
@@ -162,7 +175,7 @@ class BundlerUnit(object):
                 logger.warning(">>> It's a namespace package")
                 path = path._path
             if len(path) == 0:
-                self.add_path(module.__file__, ignore = ignore, is_compile = True, dest = dest)
+                self._add_path(module.__file__, ignore = ignore, is_compile = True, dest = dest)
                 return
             elif len(path) > 1:
 #                path = [bb for bb in path if os.path.exists(os.path.join(bb, "__init__.py"))]
@@ -172,14 +185,14 @@ class BundlerUnit(object):
             pa = os.path.dirname(path)
             if os.path.isfile(pa):
                 logger.warning(">>> It's a zip file or egg file")
-                self.add_path(pa, ignore = ignore, is_compile = True, dest = dest)
+                self._add_path(pa, ignore = ignore, is_compile = True, dest = dest)
                 return
             else:
-                self.add_path(path, ignore = ignore, is_compile = True, dest = dest)
+                self._add_path(path, ignore = ignore, is_compile = True, dest = dest)
         else:
             # pythonnet clr module has this bug
             module_path = module.__file__ if os.path.exists(module.__file__) else module.__spec__.origin
-            self.add_path(module_path, ignore = ignore, is_compile = True, dest = dest)
+            self._add_path(module_path, ignore = ignore, is_compile = True, dest = dest)
             
     def add_descriptor(self, des):
         logger.info(f"add descriptor {des.name}")
@@ -195,7 +208,7 @@ class BundlerUnit(object):
         for path, dest, is_compile in des.paths:            
             if callable(path):
                 path = path()
-            self.add_path(path, dest, is_compile = is_compile)
+            self._add_path(path, dest, is_compile = is_compile)
         for path in des.dll_search_paths:
             self.dll_cache.add_path(path)
         for name, dest in des.dlls:

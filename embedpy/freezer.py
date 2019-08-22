@@ -17,6 +17,8 @@ class Freezer(object):
         self.exes = []
         self.python_unit = self.bundler.create_python_unit(is_freeze=True)
         self.file_unit = self.bundler.create_unit('__file_unit__', is_compress = False)
+        self.python_path = []
+        self.dll_path = []
 
     def setLevel(self, level):
         self.bundler.setLevel(level)
@@ -78,7 +80,13 @@ class Freezer(object):
             self.bundler.create_unit(unit_name, is_compress=is_compress, 
                                      is_source=is_source)
         unit = self.bundler.get_unit(unit_name)
-        unit.add_dependency(name, ignore=ignore) 
+        unit.add_dependency(name, ignore=ignore)
+
+    def add_python_path(self, path):
+        self.python_path.append(path)
+
+    def add_dll_path(self, path):
+        self.dll_path.append(path)
         
     def build(self):
         if not os.path.exists(self.dirname):
@@ -102,3 +110,13 @@ class Freezer(object):
                 copy_file_if_newer(window_path, exe_path)
             else:
                 copy_file_if_newer(console_path, exe_path)
+
+        if self.python_path:
+            logger.info('generate python path')
+            with open(os.path.join(self.dirname, ".pth"), 'w') as fp:
+                fp.write("\n".join(self.python_path))
+
+        if self.dll_path:
+            logger.info('generate python path')
+            with open(os.path.join(self.dirname, "PATH"), 'w') as fp:
+                fp.write("\n".join(self.dll_path))
