@@ -146,6 +146,7 @@ class UpdateBundler(Bundler):
                                 is_source = is_source)
         unit.add_package(package)
         unit.clear_package()
+        return unit
  
     def add_path(self, path, dest=None, ignore=['__pycache__'], 
                  is_compile=None, is_override=False, unit_name=None):
