@@ -3,7 +3,9 @@ import shutil
 import platform
 from .logger import logger
 
+
 python_source_lib = os.path.abspath(os.path.dirname(os.__file__))
+
 
 def copy_file_if_newer(src, dest):
     if not os.path.exists(src):
@@ -13,7 +15,8 @@ def copy_file_if_newer(src, dest):
         shutil.copy(src, dest)
         logger.info("%s update." % dest)
         return
-    logger.info("%s reused." % dest) 
+    logger.warning(f"{dest} reused.")
+
 
 def is_file_out_of_date(file, references):
     if os.path.exists(file):
@@ -23,11 +26,13 @@ def is_file_out_of_date(file, references):
                 return True
                 break 
     return False
-            
+
+
 def remove_file_if_out_of_date(file, references):
     if is_file_out_of_date(file, references):
         logger.warning("file '%s' is out of date" % file)
         os.remove(file)
+
 
 def path_join_and_create(root, sub):
     if sub is None or sub == '':
@@ -40,6 +45,7 @@ def path_join_and_create(root, sub):
             os.mkdir(cur)
     return cur
 
+
 def mkdir(dirname):    
     tmp = os.path.split(dirname)
     cur = ''
@@ -47,6 +53,7 @@ def mkdir(dirname):
         cur = os.path.join(cur, sub)            
         if not os.path.exists(cur):
             os.mkdir(cur)
+
 
 class FileUtil(object):
     def  __init__(self):
@@ -89,9 +96,11 @@ class FileUtil(object):
     
     def get_dll_files(self, dlls):
         return [self.get_file(dll) for dll in dlls]
-    
+
+
 file_util = FileUtil()
- 
+
+
 def check_file_timeout(dest_file, dependencies, ignore = ['__pycache__']):
     if dest_file is None:
         return True 

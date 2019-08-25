@@ -378,7 +378,7 @@ class BundlerUnit(object):
     def compile_file(self, fullname, cdir, newname = None, 
                      ddir = None, optimize = -1, is_source = False):
         if not os.path.exists(cdir):
-            os.mkdir(cdir)
+            os.makedirs(cdir)
         elif not os.path.isdir(cdir):
             raise Exception('%s is not a folder' % cdir)
         name = newname if newname else os.path.basename(fullname)
