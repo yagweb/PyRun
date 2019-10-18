@@ -4,6 +4,7 @@ import shutil
 import glob
 import time
 import datetime
+import zipfile
 
 
 class Logger:
@@ -164,14 +165,51 @@ def delete_files(file):
                 os.remove(abspath)
 
 
+def _get_update_folder():
+    folder = os.path.join(sys.prefix, "update")
+    files = glob.glob(os.path.join(sys.prefix, "update*.zip"))
+    if len(files) == 0:
+        return folder
+    logger.write(f"find {len(files)} update zip file\n")
+    file_name = None
+    zip_file = None
+    for current in files:
+        temp_zip = zipfile.ZipFile(current, 'r')
+        if not "update/" in temp_zip.namelist():
+            logger.write(f"not a valid update zip {current}, skip")
+            temp_zip.close()
+            continue
+        if file_name is None or \
+                os.stat(current).st_mtime > os.stat(file_name).st_mtime:
+            file_name = current
+            zip_file = temp_zip
+        else:
+            temp_zip.close()
+    if zip_file is None:
+        logger.write(f"no valid update zip file")
+        return folder
+    logger.write(f"use the newest zip file {file_name}\n")
+    if os.path.exists(folder):
+        logger.write(f"remove the old update folder {folder}\n")
+        shutil.rmtree(folder)
+    zip_file = zipfile.ZipFile(file_name, 'r')
+    zip_file.extractall(sys.prefix)
+#    for name in zip_file.namelist():
+#        if name.startswith("update/"):
+#            # zipfile默认对于文件名编码只识别cp437和utf-8
+#            name = name.encode('cp437').decode('GBK')
+#            zip_file.extract(name, sys.prefix)
+    zip_file.close()
+    return folder
+
+
 def update():
     global logger
     logger = Logger()
 
-    folder = os.path.join(sys.prefix, "update")
+    folder = _get_update_folder()
     if not os.path.exists(folder):
-        logger.write(f"update folder '{folder}' not exist")
-        return
+        raise Exception(f"update folder '{folder}' not exist")
 
     for name in os.listdir(folder):
         abspath = os.path.join(folder, name)
