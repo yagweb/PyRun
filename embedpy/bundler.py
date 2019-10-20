@@ -3,6 +3,7 @@ import sys
 import platform
 import logging
 import shutil
+import zipfile
 
 from .cache import ItemCache, ModuleCache
 from .bundler_unit import BundlerUnit
@@ -108,11 +109,28 @@ class Bundler(object):
         unit.bundle(is_compress = is_compress,
                     is_source = is_source)
 
-    def bundle_all(self, is_compress = None, 
-                   is_source = None):
+    def bundle_all(self, is_compress=None, 
+                   is_source=None):
         for unit in self.units.values():
             unit.bundle(is_compress = is_compress, 
                         is_source = is_source)
+
+    def build_zipfile(self, file_name):
+        print(f'build zipfile {file_name} ...')
+        if os.path.exists(file_name):
+            os.remove(file_name)
+        root = os.path.dirname(self.dirname)
+        with zipfile.ZipFile(file_name, 'w') as target:
+            target.write(self.dirname, os.path.basename(self.dirname))
+            for cur_root, cur_dirs, cur_files in os.walk(self.dirname):
+                for dir in cur_dirs:
+                    full_path = os.path.join(cur_root, dir)
+                    rel_path = os.path.relpath(full_path, root)
+                    target.write(full_path, rel_path)
+                for file in cur_files:
+                    full_path = os.path.join(cur_root, file)
+                    rel_path = os.path.relpath(full_path, root)
+                    target.write(full_path, rel_path)
 
     def get_package_dependency(self, name):
         '''
@@ -156,6 +174,14 @@ class UpdateBundler(Bundler):
             unit = self.get_unit(unit_name)
         unit.add_path(path, dest=dest, ignore=ignore, 
                  is_compile=is_compile, is_override=is_override)
+
+    def build_update_zipfile(self, version=None):
+        if version:
+            version = "-{version}"
+        else:
+            version =""
+        file_name = os.path.join(self.dirname, f"../update{version}.zip")
+        self.build_zipfile(file_name)
 
 
 def print_left_dependencies(package_name):
