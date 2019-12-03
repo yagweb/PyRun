@@ -21,14 +21,18 @@ class PyRunLoader:
 
 
 class PyRunFinder:
-    def __init__(self, root):
-        self.root = root
-        module_files = get_files(root)
+    def __init__(self):
         self.modules = {}
+
+    def register_pyd(self, root):
+        module_files = get_files(root)
         for file_name, path in module_files:
             if file_name.endswith(".pyd"):
                 module_name = file_name[:-4]
                 self.modules[module_name] = path
+
+    def register(self, name, path):
+        self.modules[name] = path
         
     def find_module(self, fullname, path = None):
         if fullname in sys.modules:
@@ -184,7 +188,8 @@ def _register(root):
     register the pyd modules in extensions folder
     '''
     register_packages(root)
-    finder = PyRunFinder(os.path.join(root, "extensions"))
+    finder = PyRunFinder()
+    finder.register_pyd(os.path.join(root, "extensions"))
     if len(finder.modules) != 0:
         sys.meta_path.append(finder)
 

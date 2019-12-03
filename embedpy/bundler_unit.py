@@ -108,7 +108,7 @@ class BundlerUnit(object):
             self._add_path(path, dest, ignore, is_compile, is_override)
 
     def _add_path(self, path, dest=None, ignore=['__pycache__'], 
-                 is_compile=None, is_override=False): 
+                 is_compile=None, is_override=False, module_name=None): 
         '''
         for .py file, the dest path is relative to self.package_dir
         '''
@@ -132,7 +132,10 @@ class BundlerUnit(object):
                 mod_name = file_name[:len(file_name) - 4]
                 self.subpyd_files[mod_name] = path
             elif path.endswith(file_util.dll_ext):
-                self.dll_files.append((path, dest))
+                if module_name is None:
+                    self.dll_files.append((path, dest))
+                else:
+                    self.subpyd_files[module_name] = path
             else:
                 if is_compile is None:
                     is_compile = True if path.endswith('.py') else False
@@ -178,21 +181,19 @@ class BundlerUnit(object):
                 self._add_path(module.__file__, ignore = ignore, is_compile = True, dest = dest)
                 return
             elif len(path) > 1:
-#                path = [bb for bb in path if os.path.exists(os.path.join(bb, "__init__.py"))]
-                raise Exception("package '{0}' has multiple path".format(name))
-            path = path[0]
-            #egg file or zipfile
-            pa = os.path.dirname(path)
-            if os.path.isfile(pa):
-                logger.warning(">>> It's a zip file or egg file")
-                self._add_path(pa, ignore = ignore, is_compile = True, dest = dest)
-                return
-            else:
-                self._add_path(path, ignore = ignore, is_compile = True, dest = dest)
+                logger.warning("package '{0}' has multiple path".format(name))
+            for item in path:
+                #egg file or zipfile
+                pa = os.path.dirname(item)
+                if os.path.isfile(pa):
+                    logger.warning(f">>> It's a zip file or egg file, {item}")
+                    self._add_path(pa, ignore=ignore, is_compile=True, dest=dest)
+                elif os.path.exists(item):
+                    self._add_path(item, ignore=ignore, is_compile=True, dest=dest)
         else:
             # pythonnet clr module has this bug
             module_path = module.__file__ if os.path.exists(module.__file__) else module.__spec__.origin
-            self._add_path(module_path, ignore = ignore, is_compile = True, dest = dest)
+            self._add_path(module_path, ignore = ignore, is_compile = True, dest = dest, module_name=name)
             
     def add_descriptor(self, des):
         logger.info(f"add descriptor {des.name}")
