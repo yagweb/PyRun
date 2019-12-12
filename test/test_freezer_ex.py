@@ -17,14 +17,16 @@ def freeze_test(dest_path):
     fr = Freezer(dest_path)
     fr['python'].is_compress = True
     fr.add_package('ctypes', is_compress = True)
-    fr.add_exe(os.path.join(cur_dir, "main/test_platform.py"), 
+    fr.add_exe(os.path.join(cur_dir, "main/test_exception.py"), 
         name="test", 
-        is_source=True)
+        is_source=True,
+        init_script=os.path.join(cur_dir, "main/init_script.py"))
+    fr.add_update_exe()
     fr.build()
     print('build end.')
 
 
 if __name__ == '__main__':
     cur_dir = os.path.dirname(__file__)
-    dest_path = os.path.join(cur_dir, '../bin/demo1')
+    dest_path = os.path.join(cur_dir, '../bin/demo')
     freeze_test(dest_path)

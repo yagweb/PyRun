@@ -14,6 +14,8 @@ def build_pythonnet(des = None):
     if des is None:
         des = ModuleDescriptor('pythonnet')
     des.add_module('clr')
+    des.add_dependency('platform')
+    des.add_dependency('signal')
     
     import clr
     module_path = clr.__file__ if os.path.exists(clr.__file__) else clr.__spec__.origin
