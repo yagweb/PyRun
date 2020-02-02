@@ -108,9 +108,9 @@ class MainModuleLoader:
 
     def run(self):
         try:
-            from runpy import _run_module_as_main
-            _run_module_as_main(self.real_main_mod_name, 
-                                alter_argv=False)
+            from runpy import run_module
+            run_module(self.real_main_mod_name, init_globals=None,
+               run_name="__main__", alter_sys=False)
             return True
         except Exception as ex:
             self._init_on_error()
@@ -154,11 +154,11 @@ class MainModuleLoader:
 
     @property
     def init_mod_name(self):
-        return f"__init__{self.program_name}"
+        return f"{self.program_name}__init__"
 
     @property
     def main_mod_name(self):
-        return f"__main__{self.program_name}"
+        return f"{self.program_name}__main__"
 
     def on_error(self, ex, tb):
         with open(self.default_error_file, 'w') as fp:

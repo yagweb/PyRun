@@ -34,21 +34,30 @@ class Freezer(object):
         script = os.path.join(os.path.dirname(__file__), "update_main.py")
         self.add_exe(script, icon=icon, name=name)
         
-    def add_exe(self, script, icon=None, name=None, 
+    def add_exe(self, main_script, icon=None, name=None, 
                       is_compress=False, is_source=False,
                       init_script=None,
-                      no_console=False):
-        script_name, ext = os.path.splitext(os.path.basename(script))
+                      no_console=False,
+                      scripts=None):
+        if scripts is None:
+            scripts = {}
         if name is None:
-            name = script_name
-        self.exes.append((name, script, icon, no_console))
-        unit = self.bundler.create_unit(f"__main__{name}", is_compress = is_compress, is_source = is_source)
-        unit.add_path(script, dest = "../scripts/__main__" + name + ext,
-                      is_compile = True, is_override = True)
+            name, _ = os.path.splitext(os.path.basename(main_script))
+        self.exes.append((name, main_script, icon, no_console))
+        unit = self.bundler.create_unit(f"{name}_exe",
+                                        is_compress=is_compress,
+                                        is_source=is_source)
+        scripts["main"] = main_script
         if init_script is not None:
-            unit.add_path(init_script, dest = "../scripts/__init__" + name + ext,
-                      is_compile = True, is_override = True)
-            
+            scripts["init"] = init_script
+        # add scripts
+        for type_, path in scripts.items():
+            _, ext = os.path.splitext(os.path.basename(path))
+            unit.add_path(path, 
+                          dest=f"../scripts/{name}__{type_}__{ext}",
+                          is_compile=True,
+                          is_override=True)
+
     def create_unit(self, name, is_compress=True, is_source=False):
         return self.bundler.create_unit(name, is_compress=is_compress, 
                                         is_source=is_source)
