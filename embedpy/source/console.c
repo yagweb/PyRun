@@ -85,7 +85,6 @@ void WriteError(char* msg)
 }
 
 
-#ifdef WINDOWS
 int
 wmain(int argc, wchar_t **argv)
 {
@@ -335,12 +334,5 @@ wmain(int argc, wchar_t **argv)
 		return 0;
 	}
 }
-#else
-// Linux char* is utf8 encoded.
-int
-main(int argc, char **argv)
-{
 
-}
-#endif
 
