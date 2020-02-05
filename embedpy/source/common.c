@@ -197,7 +197,7 @@ wchar_t* PathJoin(wchar_t *dest, wchar_t* path1, wchar_t* path2, size_t dest_siz
 	return pos;
 }
 
-//Ã¿ĞĞ×î´ó×Ö½ÚÊı
+//æ¯è¡Œæœ€å¤§å­—èŠ‚æ•°
 #define MAX_LINE 1024
 
 WcharLine* NewWcharLine()
@@ -232,17 +232,17 @@ void FreeWcharLines(WcharLine* line)
 WcharLine* read_wfile(wchar_t *path)
 {
 	FILE  *fp = _wfopen(path, L"r");
-	if (fp == NULL) //ÅĞ¶ÏÎÄ¼şÊÇ·ñ´æÔÚ¼°¿É¶Á
+	if (fp == NULL) //åˆ¤æ–­æ–‡ä»¶æ˜¯å¦å­˜åœ¨åŠå¯è¯»
 	{
 		return NULL;
 	}
 	WcharLine* first = NULL;
 	WcharLine* last = NULL;
 	WcharLine* current = NULL;
-	wchar_t strLine[MAX_LINE]; //¶ÁÈ¡»º³åÇø
-	while (!feof(fp)) //Ñ­»·¶ÁÈ¡Ã¿Ò»ĞĞ£¬Ö±µ½ÎÄ¼şÎ²
+	wchar_t strLine[MAX_LINE]; //è¯»å–ç¼“å†²åŒº
+	while (!feof(fp)) //å¾ªç¯è¯»å–æ¯ä¸€è¡Œï¼Œç›´åˆ°æ–‡ä»¶å°¾
 	{
-		fgetws(strLine, MAX_LINE, fp); //½«fpËùÖ¸ÏòµÄÎÄ¼şÒ»ĞĞÄÚÈİ¶Áµ½strLine»º³åÇø
+		fgetws(strLine, MAX_LINE, fp); //å°†fpæ‰€æŒ‡å‘çš„æ–‡ä»¶ä¸€è¡Œå†…å®¹è¯»åˆ°strLineç¼“å†²åŒº
 		size_t len = wcslen(strLine);
 		if (len >= 2 && strLine[len - 2] == L'\r' && strLine[len - 1] == L'\n')
 		{
@@ -279,6 +279,6 @@ WcharLine* read_wfile(wchar_t *path)
 		wcscpy(current->Content, strLine);
 		last = current;
 	}
-	fclose(fp); //¹Ø±ÕÎÄ¼ş
+	fclose(fp); //å…³é—­æ–‡ä»¶
 	return first;
 }

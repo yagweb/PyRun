@@ -7,7 +7,7 @@
 #ifdef NOCONSOLE
 
 #include<windows.h>
-#pragma comment( linker, "/subsystem:windows /ENTRY:wmainCRTStartup") // 设置入口地址
+#pragma comment( linker, "/subsystem:windows /ENTRY:wmainCRTStartup") // 璁剧疆鍏ュ彛鍦板潃
 
 #endif
 
