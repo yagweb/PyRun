@@ -5,21 +5,27 @@
 
 #ifndef WINDOWS
 
-#define wchar_t char
+#include <wchar.h>
 
-#define L 
-#define L 
+wchar_t* _to_wchar(const char* src);
+
+wchar_t* _wgetenv(const wchar_t* name);
+
+int _wputenv(const wchar_t* value);
+
+void _wgetcwd(wchar_t *buffer, int maxlen);
 
 #endif
+
+
+#define MAX_PATH 1024
 
 
 wchar_t* wcs_copyto(wchar_t* pos, const wchar_t* content, size_t* left_size);
 
 int wcs_append(wchar_t* pos, const wchar_t* content, size_t total_size);
 
-void c_getcwd(wchar_t *buffer, int maxlen);
-
-wchar_t* GetProgramAbsPath(wchar_t *cwd, size_t maxlen);
+int GetProgramAbsPath(wchar_t *cwd, size_t maxlen);
 
 void SplitFileAbsPath(wchar_t *fullpath,
 	wchar_t *dirname, int dirname_size,
@@ -45,6 +51,10 @@ void FreeWcharLine(WcharLine* line);
 
 void FreeWcharLines(WcharLine* line);
 
-WcharLine* read_wfile(wchar_t *path);
+WcharLine* read_wfile(const wchar_t *path);
+
+wchar_t* ReadPaths(wchar_t *pos, const wchar_t *delimiter, wchar_t *dirname, const wchar_t *path_filename, size_t* left_size);
+
+wchar_t* ReadPath(const wchar_t *path_filename);
 
 #endif

@@ -3,91 +3,44 @@
 #include <stdlib.h>
 #include "common.h"
 
-
-#ifdef NOCONSOLE
+#ifdef WINDOWS
 
 #include<windows.h>
-#pragma comment( linker, "/subsystem:windows /ENTRY:wmainCRTStartup") // 设置入口地址
+#pragma comment( linker, "/subsystem:windows /ENTRY:wmainCRTStartup")
+#define MAIN wmain
+#define MAINArgType wchar_t
+
+#define LD_LIBRARY_PATH L"PATH"
+#define LD_LIBRARY_PATH_DELIMITER L";"
+#define PY_PATH_DELIMITER L";"
+
+#else
+
+#define MAIN main
+#define MAINArgType char
+
+#define LD_LIBRARY_PATH L"LD_LIBRARY_PATH"
+#define LD_LIBRARY_PATH_DELIMITER L":"
+#define PY_PATH_DELIMITER L":"
 
 #endif
 
 
-wchar_t* ReadPaths(wchar_t *pos, wchar_t *dirname, wchar_t *path_filename, size_t* left_size)
-{
-	WcharLine* lines = read_wfile(path_filename);
-	WcharLine* current = lines;
-	while (current != NULL)
-	{
-		if (IsAbsPath(current->Content) == 0)
-		{
-			pos = wcs_copyto(pos, dirname, left_size);
-			if (pos == NULL)
-			{
-				break;
-			}
-			pos = wcs_copyto(pos, L"/", left_size);
-			if (pos == NULL)
-			{
-				break;
-			}
-		}
-		pos = wcs_copyto(pos, current->Content, left_size);
-		if (pos == NULL)
-		{
-			break;
-		}
-		pos = wcs_copyto(pos, L";", left_size);
-		if (pos == NULL)
-		{
-			break;
-		}
-		current = current->Next;
-	}
-	FreeWcharLines(lines);
-	return pos;
-}
-
-
-wchar_t* ReadPath(wchar_t *path_filename)
-{
-	wchar_t* res = NULL;
-	WcharLine* lines = read_wfile(path_filename);
-	WcharLine* current = lines;
-	while (current != NULL)
-	{
-		size_t size = (wcslen(current->Content)+1)*sizeof(wchar_t);
-		res = malloc(size);
-		wcs_copyto(res, current->Content, &size);
-		break;
-	}
-	FreeWcharLines(lines);
-	return res;
-}
-
-
-void WriteError(char* msg)
-{
-	FILE *fp;
-	if ((fp = fopen("error.txt", "w")) == NULL)
-	{
-		printf("error file cannot open \n");
-		exit(0);
-	}
-	else
-	{
-		printf(msg);
-		fputs(msg, fp);
-	}
-	if (fclose(fp) != 0)
-	{
-		printf("file cannot be closed \n");
-	}
-}
+void WriteError(const char* msg);
 
 
 int
-wmain(int argc, wchar_t **argv)
+MAIN(int argc, MAINArgType **argv)
 {
+#ifdef WINDOWS
+    wchar_t** w_argv = argv;
+#else
+    wchar_t** w_argv = malloc(argc*sizeof(wchar_t*));
+	for(int i=0; i<argc; i++)
+	{
+		w_argv[i] = _to_wchar(argv[i]);
+	}
+#endif
 	extern int Py_OptimizeFlag;
 	extern int Py_NoSiteFlag;
 	Py_OptimizeFlag = 2; //1 for -O, and 2 for -OO
@@ -99,15 +52,15 @@ wmain(int argc, wchar_t **argv)
 	// Py_GetProgramFullPath() is not working currently
 
 #ifdef _DEBUG
-	wprintf(L">>argv[0] = %ls\n", argv[0]);
+	wprintf(L">>_w_argvargv[0] = %ls\n", w_argv[0]);
 #endif
 
 	const size_t fullpath_size = 1024;
 	wchar_t fullpath[1024];
-	size_t fullpath_left_size = fullpath_size;
-	if (IsAbsPath(argv[0]))
+	size_t fullpath_left_size = fullpath_size - 1;
+	if (IsAbsPath(w_argv[0]))
 	{
-		wchar_t* state = wcs_copyto(fullpath, argv[0], &fullpath_left_size);
+		wchar_t* state = wcs_copyto(fullpath, w_argv[0], &fullpath_left_size);
 		if (state == NULL)
 		{
 			WriteError("the program path is too long\n");
@@ -139,7 +92,7 @@ wmain(int argc, wchar_t **argv)
 	//Get Env_ to look modules and dlls, so the exe file only can be copied to any where.
 	const size_t env_size = 300;
 	wchar_t envname[300];
-	size_t envname_left_size = env_size / sizeof(wchar_t);
+	size_t envname_left_size = env_size - 1;
 	wchar_t* pos_envname = envname;
 	pos_envname = wcs_copyto(pos_envname, L"Env_", &envname_left_size);
 	pos_envname = wcs_copyto(pos_envname, basename, &envname_left_size);
@@ -147,8 +100,9 @@ wmain(int argc, wchar_t **argv)
 	wprintf(L">> environment varialbe name = %ls\n", envname);
 #endif
 	wchar_t *env_path = _wgetenv(envname);
-	size_t dirname_size = 1024;
-	wchar_t* dirname = malloc(dirname_size*sizeof(wchar_t));
+	size_t dirname_size = 1023;
+	size_t temp_size = (dirname_size + 1)*sizeof(wchar_t);
+	wchar_t* dirname = (wchar_t*)malloc(temp_size);
 	if (env_path == NULL)
 	{
 		wcscpy(dirname, _dirname);
@@ -156,7 +110,9 @@ wmain(int argc, wchar_t **argv)
 	else
 	{
 		wcscpy(dirname, env_path);
-		//free(env_path); // cannot free
+#ifndef WINDOWS
+		free(env_path); // for windows, it cannot free
+#endif
 	}
 #ifdef _DEBUG
 	wprintf(L">> Search dir = %ls\n", dirname);
@@ -195,19 +151,22 @@ wmain(int argc, wchar_t **argv)
 	*/
 	wchar_t* path_env = wchar_buf;
 	size_t path_env_left_size = wchar_buf_size;
-	const wchar_t *os_path = _wgetenv(L"PATH");
+	const wchar_t *os_path = _wgetenv(LD_LIBRARY_PATH);
 	wchar_t* pos = path_env;
-	pos = wcs_copyto(pos, L"PATH=", &path_env_left_size);
+	pos = wcs_copyto(pos, LD_LIBRARY_PATH, &path_env_left_size);
+	pos = wcs_copyto(pos, L"=", &path_env_left_size);
 	pos = wcs_copyto(pos, dirname, &path_env_left_size);
-	pos = wcs_copyto(pos, L";", &path_env_left_size);
+	pos = wcs_copyto(pos, LD_LIBRARY_PATH_DELIMITER, &path_env_left_size);
+
 	pos = wcs_copyto(pos, dirname, &path_env_left_size);
-	pos = wcs_copyto(pos, L"/DLLs;", &path_env_left_size);
+	pos = wcs_copyto(pos, L"/DLLs", &path_env_left_size);
+	pos = wcs_copyto(pos, LD_LIBRARY_PATH_DELIMITER, &path_env_left_size);
 
 	/* Read PATH File to get user defined search pathes */
 	int path_filename_length = 1024;
 	wchar_t path_filename[1024];
 	PathJoin(path_filename, dirname, L"PATH", fullpath_size);
- 	pos = ReadPaths(pos, dirname, path_filename, &path_env_left_size);
+ 	pos = ReadPaths(pos, LD_LIBRARY_PATH_DELIMITER, dirname, path_filename, &path_env_left_size);
 	if (pos == NULL)
 	{
 		WriteError("too much lines in the PATH file\n");
@@ -221,7 +180,7 @@ wmain(int argc, wchar_t **argv)
 		WriteError("the X.PATH filename is too long\n");
 		return 4;
 	}
-	pos = ReadPaths(pos, dirname, path_filename, &path_env_left_size);
+	pos = ReadPaths(pos, LD_LIBRARY_PATH_DELIMITER, dirname, path_filename, &path_env_left_size);
 	if (pos == NULL)
 	{
 		WriteError("too much lines in the X.PATH file\n");
@@ -234,6 +193,10 @@ wmain(int argc, wchar_t **argv)
 		WriteError("the OS PATH is too long\n");
 		return 6;
 	}
+#ifndef WINDOWS
+    free(os_path);
+#endif
+
 #ifdef _DEBUG
 	wprintf(L">> Set PATH: %ls\n", path_env);
 #endif
@@ -250,15 +213,20 @@ wmain(int argc, wchar_t **argv)
 	size_t libpath_left_size = wchar_buf_size;
 	pos = libpath;
 	pos = wcs_copyto(pos, dirname, &libpath_left_size);
-	pos = wcs_copyto(pos, L"/packages/python.zip;", &libpath_left_size);
+	pos = wcs_copyto(pos, L"/packages/python.zip", &libpath_left_size);
+	pos = wcs_copyto(pos, PY_PATH_DELIMITER, &libpath_left_size);
+
 	pos = wcs_copyto(pos, dirname, &libpath_left_size);
-	pos = wcs_copyto(pos, L"/python.zip;", &libpath_left_size);
+	pos = wcs_copyto(pos, L"/python.zip", &libpath_left_size);
+	pos = wcs_copyto(pos, PY_PATH_DELIMITER, &libpath_left_size);
+
 	pos = wcs_copyto(pos, dirname, &libpath_left_size);
-	pos = wcs_copyto(pos, L"/scripts/;", &libpath_left_size);
+	pos = wcs_copyto(pos, L"/scripts/", &libpath_left_size);
+	pos = wcs_copyto(pos, PY_PATH_DELIMITER, &libpath_left_size);
 
 	// Read .pth file
 	PathJoin(path_filename, dirname, L".pth", fullpath_size);
-	pos = ReadPaths(pos, dirname, path_filename, &libpath_left_size);
+	pos = ReadPaths(pos, PY_PATH_DELIMITER, dirname, path_filename, &libpath_left_size);
 	if (pos == NULL)
 	{
 		WriteError("too much lines in the .pth file\n");
@@ -272,7 +240,7 @@ wmain(int argc, wchar_t **argv)
 		WriteError(".pth file name length is too long\n");
 		return 9;
 	}
-	pos = ReadPaths(pos, dirname, path_filename, &libpath_left_size);
+	pos = ReadPaths(pos, PY_PATH_DELIMITER, dirname, path_filename, &libpath_left_size);
 	if (pos == NULL)
 	{
 		WriteError("too much lines in the X.pth file\n");
@@ -283,7 +251,7 @@ wmain(int argc, wchar_t **argv)
 #endif
 
 	/* Initialize Python */
-	if (libpath[wcslen(libpath)-1] == L';')
+	if (libpath[wcslen(libpath)-1] == PY_PATH_DELIMITER)
 	{
 		libpath[wcslen(libpath)-1] = L'\0';
 	}
@@ -291,8 +259,14 @@ wmain(int argc, wchar_t **argv)
 	free(dirname);
 	free(wchar_buf);
 	Py_Initialize();
-	PySys_SetArgv(argc, argv); //Set sys.argv
-
+	PySys_SetArgv(argc, w_argv); //Set sys.argv
+#ifndef WINDOWS
+	for(int i=0; i<argc; i++)
+	{
+		free(w_argv[i]);
+	}
+	free(w_argv);
+#endif
 	// Now, run! sys.executable, can be used to the the exe path.
 	/*PyRun_SimpleString("import hook\n"
 		"hook.run()\n"
@@ -336,3 +310,21 @@ wmain(int argc, wchar_t **argv)
 }
 
 
+void WriteError(const char* msg)
+{
+	FILE *fp;
+	if ((fp = fopen("error.txt", "w")) == NULL)
+	{
+		printf("error file cannot open \n");
+		exit(0);
+	}
+	else
+	{
+		printf(msg);
+		fputs(msg, fp);
+	}
+	if (fclose(fp) != 0)
+	{
+		printf("file cannot be closed \n");
+	}
+}
