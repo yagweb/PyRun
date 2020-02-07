@@ -5,23 +5,28 @@
 
 #ifdef WINDOWS
 
-#include<windows.h>
-#pragma comment( linker, "/subsystem:windows /ENTRY:wmainCRTStartup")
-#define MAIN wmain
-#define MAINArgType wchar_t
+	#ifdef NOCONSOLE
 
-#define LD_LIBRARY_PATH L"PATH"
-#define LD_LIBRARY_PATH_DELIMITER L";"
-#define PY_PATH_DELIMITER L";"
+		#include<windows.h>
+		#pragma comment( linker, "/subsystem:windows /ENTRY:wmainCRTStartup")
+
+	#endif
+
+	#define MAIN wmain
+	#define MAINArgType wchar_t
+
+	#define LD_LIBRARY_PATH L"PATH"
+	#define LD_LIBRARY_PATH_DELIMITER L";"
+	#define PY_PATH_DELIMITER L";"
 
 #else
 
-#define MAIN main
-#define MAINArgType char
+	#define MAIN main
+	#define MAINArgType char
 
-#define LD_LIBRARY_PATH L"LD_LIBRARY_PATH"
-#define LD_LIBRARY_PATH_DELIMITER L":"
-#define PY_PATH_DELIMITER L":"
+	#define LD_LIBRARY_PATH L"LD_LIBRARY_PATH"
+	#define LD_LIBRARY_PATH_DELIMITER L":"
+	#define PY_PATH_DELIMITER L":"
 
 #endif
 
