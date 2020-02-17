@@ -177,7 +177,7 @@ class UpdateBundler(Bundler):
 
     def build_update_zipfile(self, version=None):
         if version:
-            version = "-{version}"
+            version = f"-{version}"
         else:
             version =""
         file_name = os.path.join(self.dirname, f"../update{version}.zip")
