@@ -41,7 +41,7 @@ ROOT_PATH :=$(strip $(patsubst %/, %, $(dir $(mkfile_path))))#
 SOURCE_ROOT_PATH :=$(ROOT_PATH)#
 #$(info $(ROOT_PATH))
 OUTDIR=$(abspath $(ROOT_PATH)/../bin/$(BITS_NAME))
-OBJDIR=$(abspath $(ROOT_PATH)/../obj/$(BITS_NAME)/$(Type_Name))
+OBJDIR=$(abspath $(ROOT_PATH)/../obj/py$(PyVer)_$(BITS_NAME)/$(Type_Name))
 ifeq ($(RELEASE),0)
     OUTDIR:=$(OUTDIR)/Debug
 endif
@@ -56,7 +56,7 @@ ifeq ($(OS),Windows_NT)
     DLLPre=
     DLLExt=.dll
     LIBExt=.lib
-    EXEExt=.dll
+    EXEExt=.exe
 
     CFLAGS=-Wall -m$(BITS) -D WIN32 -D MINGW
     LFLAGS=-Wall -m$(BITS)

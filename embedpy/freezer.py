@@ -1,13 +1,20 @@
 import os
+import sys
+import platform
 import logging
 import embedpy
 from .bundler import Bundler
 from .file_utils import copy_file_if_newer
-from .logger import logger
+from .logger import logger_helper, logger
 
 
-console_path = os.path.join(embedpy.__path__[0], "bases/console.exe")
-window_path = os.path.join(embedpy.__path__[0], "bases/window.exe")
+pyver = f"{sys.version_info.major}{sys.version_info.minor}"
+if platform.system() == "Windows":
+    exe_ext = ".exe"
+else:
+    exe_ext = ""
+console_path = os.path.join(embedpy.__path__[0], f"bases/console{pyver}{exe_ext}")
+window_path = os.path.join(embedpy.__path__[0], f"bases/window{pyver}{exe_ext}")
 
 
 class Freezer(object):
@@ -98,6 +105,10 @@ class Freezer(object):
         self.dll_path.append(path)
         
     def build(self):
+        from io import StringIO
+        stream = StringIO()
+        logger_helper.add_stream_handler(name="err", stream=stream, 
+                            fstr=None, level=logging.ERROR)
         if not os.path.exists(self.dirname):
             logger.info('create folder %s' % os.path.abspath(self.dirname))
             pa = os.path.dirname(self.dirname)
@@ -129,3 +140,7 @@ class Freezer(object):
             logger.info('generate python path')
             with open(os.path.join(self.dirname, "PATH"), 'w') as fp:
                 fp.write("\n".join(self.dll_path))
+        
+        print("-------------------Errors-------------------")
+        print(stream.getvalue())
+        logger_helper.remove_handler("err")

@@ -420,8 +420,8 @@ class BundlerUnit(object):
                                 optimize=optimize)
             return True
         except Exception as ex:
-            logger.error('Exception: %s' % str(ex))
-            return False
+            logger.error('**** Exception: %s' % str(ex))
+            return True
             
     def compile_dir(self, dir, cdir, newname = None, ignore = ['__pycache__'], 
                     maxlevels=10, ddir=None, 

@@ -140,7 +140,7 @@ int _wputenv(const wchar_t* value)
 void _wgetcwd(wchar_t *cwd,
 	int maxlen)
 {
-    size_t _maxlen = maxlen*2;
+    size_t _maxlen = maxlen*sizeof(wchar_t);
 	char* src = malloc(_maxlen);
 	char* state = getcwd(src, _maxlen);
     if(state == NULL)

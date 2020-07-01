@@ -12,8 +12,14 @@
 
 	#endif
 
-	#define MAIN wmain
-	#define MAINArgType wchar_t
+	#ifdef MINGW
+		#include<windows.h>
+		#define MAIN main
+		#define MAINArgType char
+	#else
+		#define MAIN wmain
+		#define MAINArgType wchar_t
+	#endif
 
 	#define LD_LIBRARY_PATH L"PATH"
 	#define LD_LIBRARY_PATH_DELIMITER L";"
@@ -38,7 +44,11 @@ int
 MAIN(int argc, MAINArgType **argv)
 {
 #ifdef WINDOWS
-    wchar_t** w_argv = argv;
+	#ifdef MINGW
+		wchar_t** w_argv = CommandLineToArgvW(GetCommandLineW(), &argc);
+	#else
+		wchar_t** w_argv = argv;
+	#endif
 #else
     wchar_t** w_argv = malloc(argc*sizeof(wchar_t*));
 	for(int i=0; i<argc; i++)

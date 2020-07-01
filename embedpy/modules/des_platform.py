@@ -3,10 +3,13 @@ hand written descriptor for the platform module
 '''
 from .descriptor import ModuleDescriptor
 
+
 def get_descriptors():
     return [build_platform(),
             build_threading(),
+            build_queue(),
             build_multiprocessing(),]
+
 
 def build_platform(des = None):
     if des is None:
@@ -16,11 +19,22 @@ def build_platform(des = None):
     des.add_dependency('subprocess')
     return des
 
+
 def build_threading(des = None):
     if des is None:
         des = ModuleDescriptor('threading')
     des.add_module('threading')
     return des
+
+
+def build_queue(des = None):
+    if des is None:
+        des = ModuleDescriptor('queue')
+    des.add_dependency('queue')
+    if des.pyver >= '37':
+        des.add_dependency('_queue')
+    return des
+
 
 def build_multiprocessing(des = None):
     if des is None:
