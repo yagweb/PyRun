@@ -4,10 +4,11 @@ import zipfile
 import shutil
 import py_compile
 import glob
+import logging
 from _frozen_importlib_external import _NamespacePath
 from .file_utils import file_util, check_file_timeout, \
     copy_file_if_newer, path_join_and_create
-from .logger import logger
+from .logger import logger_helper, logger
 
 
 python_source_lib = os.path.abspath(os.path.dirname(os.__file__))
@@ -23,6 +24,7 @@ class BundlerUnit(object):
                  pyd_dir = None):
         self.name = name        
         self.compile_files = [] #try to compile first
+        self.dll_missing = []
         self.dll_files = []
         self.subpyd_files = {} #name, fullpath
         self.copy_files = []
@@ -90,7 +92,7 @@ class BundlerUnit(object):
     def add_dll(self, name, dest=None):
         path = self.dll_cache.get(name)
         if path is None:
-            logger.error(f"dll {name} not found, search paths: {self.dll_cache.search_path}")
+            self.dll_missing.append(name)
             return
         self.dll_files.append((path, dest))
 
@@ -240,7 +242,20 @@ class BundlerUnit(object):
             if os.path.exists(temp):
                 shutil.rmtree(temp)
 
-    def bundle(self, is_compress = None, is_source = None):
+    def bundle(self, is_compress=None, is_source=None):
+        from io import StringIO
+        stream = StringIO()
+        logger_helper.add_stream_handler(name="err", stream=stream, 
+                            fstr=None, level=logging.ERROR)
+        self._bundle(is_compress=is_compress, is_source=is_source)
+        print("-------------------Errors-------------------")
+        print(stream.getvalue())
+        if self.dll_missing:
+            logger.error(f"dlls {','.join(self.dll_missing)} not found")
+            logger.error(f"dll search paths: \n{self.dll_cache.search_path}")
+        logger_helper.remove_handler("err")
+
+    def _bundle(self, is_compress=None, is_source=None):
         logger.info("bundle {0} start...".format(self.name))
         if is_compress is not None:
             self.is_compress = is_compress

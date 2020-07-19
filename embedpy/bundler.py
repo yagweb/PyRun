@@ -10,7 +10,7 @@ from .bundler_unit import BundlerUnit
 from .file_utils import copy_file_if_newer, mkdir
 from .modules import ModuleDescriptor
 from .dllcache import DLLCache
-from .logger import logger
+from .logger import logger_helper, logger
 
 
 def get_pyver():
@@ -27,6 +27,7 @@ class Bundler(object):
         self.pyd_dir = os.path.join(dirname, "extensions")
         self.dll_dir = os.path.join(dirname, "DLLs")
         self.descriptors = {}
+        self.platform = sys.platform
         self.pyver = get_pyver()
         self.descriptor_cache = ItemCache()
         self.module_cache = ModuleCache()
@@ -38,6 +39,9 @@ class Bundler(object):
         # register some basic modules
         from .modules import descriptors
         self.register(descriptors)
+
+    def add_dll_search_path(self, path):
+        self.dll_cache.add_path(path)
 
     def create_python_unit(self, is_compress=False, is_freeze=False, name="python"):
         # core bundler, unique
@@ -109,11 +113,28 @@ class Bundler(object):
         unit.bundle(is_compress = is_compress,
                     is_source = is_source)
 
+    def _bundle_all(self, is_compress=None, 
+                   is_source=None):
+        dll_missing = []
+        for unit in self.units.values():
+            unit._bundle(is_compress = is_compress, 
+                        is_source = is_source)
+            dll_missing.extend(unit.dll_missing)
+        return dll_missing
+
     def bundle_all(self, is_compress=None, 
                    is_source=None):
-        for unit in self.units.values():
-            unit.bundle(is_compress = is_compress, 
-                        is_source = is_source)
+        from io import StringIO
+        stream = StringIO()
+        logger_helper.add_stream_handler(name="err", stream=stream, 
+                            fstr=None, level=logging.ERROR)
+        dll_missing = self._bundle_all(is_compress=is_compress, is_source=is_source)
+        print("-------------------Errors-------------------")
+        print(stream.getvalue())
+        if dll_missing:
+            logger.error(f"dlls {','.join(dll_missing)} not found")
+            logger.error(f"dll search paths: \n{self.dll_cache.search_path}")
+        logger_helper.remove_handler("err")
 
     def build_zipfile(self, file_name):
         print(f'build zipfile {file_name} ...')

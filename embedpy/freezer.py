@@ -21,11 +21,16 @@ class Freezer(object):
     def __init__(self, dirname, logging_level=logging.INFO):
         self.dirname = dirname
         self.bundler = Bundler(dirname, logging_level=logging_level)
+        self.platform = self.bundler.platform
+        self.pyver = self.bundler.pyver
         self.exes = []
         self.python_unit = self.bundler.create_python_unit(is_freeze=True)
         self.file_unit = self.bundler.create_unit('__file_unit__', is_compress = False)
         self.python_path = []
         self.dll_path = []
+
+    def add_dll_search_path(self, path):
+        self.bundler.add_dll_search_path(path)
 
     def setLevel(self, level):
         self.bundler.setLevel(level)
@@ -103,7 +108,7 @@ class Freezer(object):
 
     def add_dll_path(self, path):
         self.dll_path.append(path)
-        
+
     def build(self):
         from io import StringIO
         stream = StringIO()
@@ -121,7 +126,7 @@ class Freezer(object):
         self.bundler.copy_python_dll()
         
         logger.info('bundling packages')
-        self.bundler.bundle_all(is_compress = None, is_source = None)
+        dll_missing = self.bundler._bundle_all(is_compress = None, is_source = None)
         
         logger.info('copying exes')
         for name, script, icon, no_console in self.exes:
@@ -143,4 +148,7 @@ class Freezer(object):
         
         print("-------------------Errors-------------------")
         print(stream.getvalue())
+        if dll_missing:
+            logger.error(f"dlls {','.join(dll_missing)} not found")
+            logger.error(f"dll search paths: \n{self.bundler.dll_cache.search_path}")
         logger_helper.remove_handler("err")

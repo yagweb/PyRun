@@ -49,6 +49,7 @@ class ModuleDescriptor(object):
         self.dll_search_paths = []
         self.pyver = get_pyver()
         self.python_version = platform.python_version()
+        self.platform = sys.platform
         if sys.platform == "win32":
             self.mod_ext = ".cp%s-win_amd64.pyd" % self.pyver
             self.dll_prefix = ""
