@@ -344,7 +344,7 @@ class BundlerUnit(object):
                 else:
                     shutil.copytree(file, destfile)
             
-    def compile_objs(self, maxlevels = 10, ddir = None, optimize = -1):
+    def compile_objs(self, maxlevels=10, ddir='', optimize=-1):
         files = self.compile_files
         cdir = self.root
         is_source = self.is_source
@@ -362,7 +362,7 @@ class BundlerUnit(object):
                     logger.info('skipping %s' % _file)
                     return True
                 success = self.compile_dir(_file, cdir, newname, ignore = ignore, 
-                                      maxlevels=10, ddir=None, 
+                                      maxlevels=10, ddir=ddir, 
                                       optimize=-1, is_source = is_source)
             else:
                 success = self.compile_file(_file, cdir, newname, ddir, 
@@ -372,7 +372,7 @@ class BundlerUnit(object):
         for file, dest, ignore in files:
             if dest:
                 newname = os.path.basename(dest)
-                _cdir = os.path.join(cdir, os.path.dirname(dest)) 
+                _cdir = os.path.join(cdir, os.path.dirname(dest))
             else :
                 _cdir = cdir
                 newname = None
@@ -449,6 +449,8 @@ class BundlerUnit(object):
             raise Exception('%s is not a folder' % cdir)
         name = newname if newname else os.path.basename(dir)
         cdir = os.path.join(cdir, name)
+        if ddir is not None:
+            ddir = os.path.join(ddir, name)
         logger.info('list {!r}...'.format(dir))
         names = os.listdir(dir)    
         names.sort()

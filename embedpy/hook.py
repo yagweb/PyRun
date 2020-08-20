@@ -171,7 +171,7 @@ class MainModuleLoader:
             fp.write('\n--------- Error Info ---------\n\n')
             fp.write(f"{str(ex)}\n")
             fp.write("\n--------- Traceback ----------\n\n")
-            # fp.write(traceback.format_exc())
+            fp.write(traceback.format_exc())
             traceback.print_exc(file=fp)
             fp.write('\n--------- Debug Info ---------\n\n')
             fp.write(f">>> dll search path:\n\n")

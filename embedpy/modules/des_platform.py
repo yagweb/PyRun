@@ -30,7 +30,7 @@ def build_threading(des = None):
 def build_queue(des = None):
     if des is None:
         des = ModuleDescriptor('queue')
-    des.add_dependency('queue')
+    des.add_module('queue')
     if des.pyver >= '37':
         des.add_dependency('_queue')
     return des
