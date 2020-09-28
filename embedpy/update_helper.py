@@ -211,16 +211,23 @@ def update():
     if not os.path.exists(folder):
         raise Exception(f"update folder '{folder}' not exist")
 
-    for name in os.listdir(folder):
+    files = os.listdir(folder)
+    for name in ["delete.txt"]:
+        if name not in files:
+            continue
+        files.remove(name)
         abspath = os.path.join(folder, name)
-        destpath = os.path.join(sys.prefix, name)
         if name == "delete.txt":
             logger.write(">>Remove files:\n")
             logger.indent()
             delete_files(abspath)
             logger.dedent()
             logger.write("\n")
-        elif name == "packages":
+
+    for name in files:
+        abspath = os.path.join(folder, name)
+        destpath = os.path.join(sys.prefix, name)
+        if name == "packages":
             logger.write("\n>>Updating packages:\n")
             logger.indent()
             _update_packages(abspath)
